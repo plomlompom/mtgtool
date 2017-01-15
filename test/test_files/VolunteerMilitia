@@ -1,0 +1,26 @@
+NAME: Volunteer Militia
+NAMES: 
+LAYOUT: normal
+MANA COST: {W}
+CONVERTED MANA COST: 1
+TYPE: Creature — Human Soldier
+POWER: 1
+TOUGHNESS: 2
+MAX HAND SIZE MODIFIER: None
+STARTING LIFE TOTAL MODIFIER: None
+FLAVOR:
+  People fight hardest on their own soil.
+TEXT:
+RARITY: Common
+COLOR: White
+COLOR IDENTITY: White
+SUPERTYPES: 
+TYPES: Creature
+SUBTYPES: Human, Soldier
+PRINTINGS: PO2, PTK
+RULINGS:
+LEGALITIES:
+  Commander: Legal
+  Legacy: Legal
+  Vintage: Legal
+FOREIGN NAMES:

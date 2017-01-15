@@ -1,0 +1,79 @@
+Card is split:
+//
+NAME: Research
+NAMES: Research, Development
+LAYOUT: split
+MANA COST: {G}{U}
+CONVERTED MANA COST: 2
+TYPE: Instant
+POWER: None
+TOUGHNESS: None
+MAX HAND SIZE MODIFIER: None
+STARTING LIFE TOTAL MODIFIER: None
+FLAVOR:
+TEXT:
+  Choose up to four cards you own from outside the game and shuffle them into your library.
+RARITY: Rare
+COLOR: Blue, Green
+COLOR IDENTITY: Blue, Green
+SUPERTYPES: 
+TYPES: Instant
+SUBTYPES: 
+PRINTINGS: DIS
+RULINGS:
+  2009-10-01: A card "from outside the game" may be a card from your collection or a card from your sideboard. In tournament play, you can't choose a card from your collection. The cards you choose don't all have to come from the same place.
+  2009-10-01: The exile zone is a part of the game, so you can't get exiled cards.
+LEGALITIES:
+  Commander: Legal
+  Legacy: Legal
+  Modern: Legal
+  Ravnica Block: Legal
+  Vintage: Legal
+FOREIGN NAMES:
+  Chinese Simplified: Research
+  French: Research
+  German: Research
+  Italian: Research
+  Japanese: Research
+  Portuguese (Brazil): Research
+  Russian: Research
+  Spanish: Research
+//
+NAME: Development
+NAMES: Research, Development
+LAYOUT: split
+MANA COST: {3}{U}{R}
+CONVERTED MANA COST: 5
+TYPE: Instant
+POWER: None
+TOUGHNESS: None
+MAX HAND SIZE MODIFIER: None
+STARTING LIFE TOTAL MODIFIER: None
+FLAVOR:
+TEXT:
+  Create a 3/1 red Elemental creature token unless any opponent has you draw a card. Repeat this process two more times.
+RARITY: Rare
+COLOR: Blue, Red
+COLOR IDENTITY: Blue, Red
+SUPERTYPES: 
+TYPES: Instant
+SUBTYPES: 
+PRINTINGS: DIS
+RULINGS:
+  2006-05-01: Development's effect is repeated three times no matter which option the opponent chooses. The opponent may choose a different option each time. You'll wind up with three Elemental tokens, two tokens and a card, one token and two cards, or three cards, whichever your opponent chooses.
+  2006-05-01: In a multiplayer game, each opponent, in turn, has the option to let you draw a card. If no opponent does, you put a token onto the battlefield. Then the process repeats two more times. A different opponent may let you draw a card each time.
+LEGALITIES:
+  Commander: Legal
+  Legacy: Legal
+  Modern: Legal
+  Ravnica Block: Legal
+  Vintage: Legal
+FOREIGN NAMES:
+  Chinese Simplified: Development
+  French: Development
+  German: Development
+  Italian: Development
+  Japanese: Development
+  Portuguese (Brazil): Development
+  Russian: Development
+  Spanish: Development

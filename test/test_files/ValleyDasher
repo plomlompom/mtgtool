@@ -1,0 +1,43 @@
+NAME: Valley Dasher
+NAMES: 
+LAYOUT: normal
+MANA COST: {1}{R}
+CONVERTED MANA COST: 2
+TYPE: Creature — Human Berserker
+POWER: 2
+TOUGHNESS: 2
+MAX HAND SIZE MODIFIER: None
+STARTING LIFE TOTAL MODIFIER: None
+FLAVOR:
+  Mardu riders' greatest fear is that a battle might end before their weapons draw blood.
+TEXT:
+  Haste
+  Valley Dasher attacks each turn if able.
+RARITY: Common
+COLOR: Red
+COLOR IDENTITY: Red
+SUPERTYPES: 
+TYPES: Creature
+SUBTYPES: Human, Berserker
+PRINTINGS: KTK
+RULINGS:
+  2014-09-20: You still choose which player or planeswalker Valley Dasher attacks.
+  2014-09-20: If, during your declare attackers step, Valley Dasher is tapped or is affected by a spell or ability that says it can't attack, then it doesn't attack. If there's a cost associated with having Valley Dasher attack, you're not forced to pay that cost, so it doesn't have to attack in that case either.
+  2014-09-20: If Valley Dasher enters the battlefield before the combat phase, it will attack that turn if able. If it enters the battlefield after combat, it won't attack that turn and will usually be available to block on the following turn.
+LEGALITIES:
+  Commander: Legal
+  Khans of Tarkir Block: Legal
+  Legacy: Legal
+  Modern: Legal
+  Vintage: Legal
+FOREIGN NAMES:
+  Chinese Simplified: 峡谷迅击兵
+  Chinese Traditional: 峽谷迅擊兵
+  French: Fonceur des vallées
+  German: Talstürmer
+  Italian: Assaltatore della Valle
+  Japanese: 谷を駆ける者
+  Korean: 돌진하는 계곡 기수
+  Portuguese (Brazil): Relâmpago do Vale
+  Russian: Всадник из Долины
+  Spanish: Traviesavalles
