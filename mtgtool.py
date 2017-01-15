@@ -6,11 +6,18 @@ mtgjson_url = 'http://mtgjson.com/json/AllSets-x.json.zip'
 
 def parse_args():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', dest='card_name', action='store')
-    parser.add_argument('-p', dest='card_set', action='store')
-    parser.add_argument('-t', dest='card_translated', action='store')
-    return parser.parse_args()
+    parser = argparse.ArgumentParser(description='Plom\'s MTG tool')
+    parser.add_argument('-c', dest='card_name', action='store',
+                        help='specify (original english) name of a card for '
+                        'which to view data')
+    parser.add_argument('-p', dest='card_set', action='store',
+                        help='specify a card set by acronym; in combination '
+                        'with -c, selects a specific printing for cards '
+                        'available in more than one printing')
+    parser.add_argument('-t', dest='card_translation', action='store',
+                        help='translated name of a card for which to retrieve'
+                        ' english original name')
+    return parser, parser.parse_args()
 
 
 def init_db():
@@ -204,10 +211,10 @@ def init_db():
 def get_translated_original_name(cursor, conn, translation):
     results = []
     for row in cursor.execute('SELECT id, language FROM card_foreign_names '
-                              'WHERE name = ?', (args.card_translated,)):
+                              'WHERE name = ?', (translation,)):
         results += [(row[0], row[1])]
     if len(results) == 0:
-        print('Found no card translated to:', args.card_translated)
+        print('Found no card translated to:', translation)
     else:
         used_names = []
         for result in results:
@@ -217,7 +224,7 @@ def get_translated_original_name(cursor, conn, translation):
                            (selected_id,))
             name = cursor.fetchone()[0]
             if name not in used_names:
-                print('\'' + args.card_translated + '\' is the', language,
+                print('\'' + translation + '\' is the', language,
                       'name for:', name)
             used_names += [name]
 
@@ -324,12 +331,12 @@ def get_card(cursor, conn, card_name, card_set):
         print_card(selected_id)
 
 
-args = parse_args()
+argparser, args = parse_args()
 cursor, conn = init_db()
-if args.card_translated:
-    get_translated_original_name(cursor, conn, args.card_translated)
+if args.card_translation:
+    get_translated_original_name(cursor, conn, args.card_translation)
 elif args.card_name:
     get_card(cursor, conn, args.card_name, args.card_set)
 else:
-    print('Well, what?')
+    argparser.print_help()
 conn.close()
