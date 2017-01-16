@@ -17,3 +17,10 @@ testing
 -------
 
 Just run ./test.sh
+
+updating
+--------
+
+When a new set is released, the card data retrieved from <http://mtgjson.com/>
+should be updated. To do so, just trigger a rebuild of the database by deleting
+~/.mtgtool/db.sqlite.
