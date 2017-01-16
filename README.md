@@ -14,7 +14,7 @@ This DB can be queried for card data by passing the precise original English
 card name with the `-c` option:
 
     $ ./mtgtool.py -c 'Black Lotus'
-    There are multiple printings of this card in different sets. Showing the printing of set: VMA
+    There are multiple printings of this card in different sets. Showing the printing of newest set: VMA
     NAME: Black Lotus
     NAMES: 
     LAYOUT: normal
@@ -91,7 +91,7 @@ passed to the `-t` option:
 testing
 -------
 
-Just run `./test.sh`
+Just run `./test.sh`.
 
 updating
 --------

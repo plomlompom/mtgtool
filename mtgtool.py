@@ -316,7 +316,7 @@ def get_card(cursor, conn, card_name, card_set):
                 set_name = set_name_i
         card_choice = sets_of_card.index(set_name)
         print('There are multiple printings of this card in different sets. '
-              'Showing the printing of set:', set_name)
+              'Showing the printing of newest set:', set_name)
     selected_id = results[card_choice]['id']
     use_multinames = results[card_choice]['use_multinames']
     if 1 == use_multinames:
