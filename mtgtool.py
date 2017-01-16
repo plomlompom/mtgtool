@@ -209,10 +209,9 @@ def init_db():
 
 
 def get_translated_original_name(cursor, conn, translation):
-    results = []
-    for row in cursor.execute('SELECT id, language FROM card_foreign_names '
-                              'WHERE name = ?', (translation,)):
-        results += [(row[0], row[1])]
+    results = [(row[0], row[1]) for row in cursor.execute(
+               'SELECT id, language FROM card_foreign_names WHERE name = ?',
+               (translation,))]
     if len(results) == 0:
         print('Found no card translated to:', translation)
     else:
