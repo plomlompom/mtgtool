@@ -24,3 +24,11 @@ updating
 When a new set is released, the card data retrieved from <http://mtgjson.com/>
 should be updated. To do so, just trigger a rebuild of the database by deleting
 ~/.mtgtool/db.sqlite.
+
+bugs
+----
+
+As of 2017-01-16, the data from <http://mtgjson.com/> is somewhat incomplete in
+regards to translated names. Some examples: German "Zwang" should not only be
+"Duress", but also "Coercion"; German "Sturmgeist" should be "Storm Spirit";
+German "Dominieren" should not only be "Domineer", but also "Dominate".
