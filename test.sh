@@ -16,13 +16,13 @@ diff_test()
 # Set up test directory, run file creations.
 generated_files_dir=./test/test_dir
 mkdir -p "$generated_files_dir"
-python3 ./mtgtool.py > /dev/null
-python3 ./mtgtool.py -c 'Raging Goblin' > "$generated_files_dir"/RagingGoblin
-python3 ./mtgtool.py -c 'Valley Dasher' > "$generated_files_dir"/ValleyDasher
-python3 ./mtgtool.py -c 'Research // Development' > "$generated_files_dir"/ResearchDevelopment
-python3 ./mtgtool.py -t 'Sturmgeist' > "$generated_files_dir"/Sturmgeist
-python3 ./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
-python3 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
+./mtgtool.py > /dev/null
+./mtgtool.py -c 'Raging Goblin' > "$generated_files_dir"/RagingGoblin
+./mtgtool.py -c 'Valley Dasher' > "$generated_files_dir"/ValleyDasher
+./mtgtool.py -c 'Research // Development' > "$generated_files_dir"/ResearchDevelopment
+./mtgtool.py -t 'Sturmgeist' > "$generated_files_dir"/Sturmgeist
+./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
+./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
 
 # Compare metadata files.
 for file in ./test/test_files/*; do
