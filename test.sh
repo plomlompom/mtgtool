@@ -20,7 +20,7 @@ python3 ./mtgtool.py > /dev/null
 python3 ./mtgtool.py -c 'Raging Goblin' > "$generated_files_dir"/RagingGoblin
 python3 ./mtgtool.py -c 'Valley Dasher' > "$generated_files_dir"/ValleyDasher
 python3 ./mtgtool.py -c 'Research // Development' > "$generated_files_dir"/ResearchDevelopment
-python3 ./mtgtool.py -t 'Miasma Sibilante' > "$generated_files_dir"/MiasmaSibilante
+python3 ./mtgtool.py -t 'Sturmgeist' > "$generated_files_dir"/Sturmgeist
 python3 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
 
 # Compare metadata files.

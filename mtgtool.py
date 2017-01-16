@@ -216,17 +216,18 @@ def get_translated_original_name(cursor, conn, translation):
     if len(results) == 0:
         print('Found no card translated to:', translation)
     else:
-        used_names = []
+        used_name_language_combos = []
         for result in results:
             selected_id = result[0]
             language = result[1]
             cursor.execute('SELECT name FROM cards WHERE id = ?',
                            (selected_id,))
             name = cursor.fetchone()[0]
-            if name not in used_names:
+            name_language_combo = language + ':' + name
+            if name not in used_name_language_combos:
                 print('\'' + translation + '\' is the', language,
                       'name for:', name)
-            used_names += [name]
+            used_name_language_combos += [name_language_combo]
 
 
 def get_card(cursor, conn, card_name, card_set):
