@@ -84,7 +84,7 @@ rarity and the printed types and texts):
 To identify the original name for translated cards, a translated name can be
 passed to the `-t` option:
 
-    $ ./mtgtool.py -t 'Seelenfeuer'
+    $ ./mtgtool.py -t Seelenfeuer
     'Seelenfeuer' is the German name for: Soul Burn
     'Seelenfeuer' is the German name for: Soul's Fire
 
