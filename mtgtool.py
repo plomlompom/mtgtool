@@ -224,10 +224,10 @@ def get_translated_original_name(cursor, conn, translation):
                            (selected_id,))
             name = cursor.fetchone()[0]
             name_language_combo = language + ':' + name
-            if name not in used_name_language_combos:
+            if name_language_combo not in used_name_language_combos:
                 print('\'' + translation + '\' is the', language,
                       'name for:', name)
-            used_name_language_combos += [name_language_combo]
+                used_name_language_combos += [name_language_combo]
 
 
 def get_card(cursor, conn, card_name, card_set):
