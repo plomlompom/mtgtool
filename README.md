@@ -91,7 +91,7 @@ passed to the `-t` option:
 testing
 -------
 
-Just run ./test.sh
+Just run `./test.sh`
 
 updating
 --------
