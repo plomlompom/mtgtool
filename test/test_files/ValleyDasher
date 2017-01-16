@@ -3,14 +3,18 @@ NAMES:
 LAYOUT: normal
 MANA COST: {1}{R}
 CONVERTED MANA COST: 2
-TYPE: Creature — Human Berserker
+CURRENT TYPE: Creature — Human Berserker
+PRINTED TYPE: Creature — Human Berserker
 POWER: 2
 TOUGHNESS: 2
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
   Mardu riders' greatest fear is that a battle might end before their weapons draw blood.
-TEXT:
+ORACLE TEXT:
+  Haste
+  Valley Dasher attacks each turn if able.
+PRINTED TEXT:
   Haste
   Valley Dasher attacks each turn if able.
 RARITY: Common

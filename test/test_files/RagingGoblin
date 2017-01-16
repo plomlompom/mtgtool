@@ -4,15 +4,18 @@ NAMES:
 LAYOUT: normal
 MANA COST: {R}
 CONVERTED MANA COST: 1
-TYPE: Creature — Goblin Berserker
+CURRENT TYPE: Creature — Goblin Berserker
+PRINTED TYPE: Creature — Goblin Berserker
 POWER: 1
 TOUGHNESS: 1
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
   He raged at the world, at his family, at his life. But mostly he just raged.
-TEXT:
+ORACLE TEXT:
   Haste (This creature can attack and {T} as soon as it comes under your control.)
+PRINTED TEXT:
+  Haste
 RARITY: Common
 COLOR: Red
 COLOR IDENTITY: Red

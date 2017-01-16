@@ -3,14 +3,16 @@ NAMES:
 LAYOUT: normal
 MANA COST: {W}
 CONVERTED MANA COST: 1
-TYPE: Creature — Human Soldier
+CURRENT TYPE: Creature — Human Soldier
+PRINTED TYPE: Creature — Soldier
 POWER: 1
 TOUGHNESS: 2
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
   People fight hardest on their own soil.
-TEXT:
+ORACLE TEXT:
+PRINTED TEXT:
 RARITY: Common
 COLOR: White
 COLOR IDENTITY: White

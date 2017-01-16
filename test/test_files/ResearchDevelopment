@@ -5,14 +5,22 @@ NAMES: Research, Development
 LAYOUT: split
 MANA COST: {G}{U}
 CONVERTED MANA COST: 2
-TYPE: Instant
+CURRENT TYPE: Instant
+PRINTED TYPE: Instant
 POWER: None
 TOUGHNESS: None
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
-TEXT:
+ORACLE TEXT:
   Choose up to four cards you own from outside the game and shuffle them into your library.
+PRINTED TEXT:
+  Choose up to four cards you own from outside the game and shuffle them into your library.
+  //
+  Development
+  {3}{U}{R}
+  Instant
+  Put a 3/1 red Elemental creature token into play unless an opponent lets you draw a card. Repeat this process two more times.
 RARITY: Rare
 COLOR: Blue, Green
 COLOR IDENTITY: Blue, Green
@@ -44,14 +52,22 @@ NAMES: Research, Development
 LAYOUT: split
 MANA COST: {3}{U}{R}
 CONVERTED MANA COST: 5
-TYPE: Instant
+CURRENT TYPE: Instant
+PRINTED TYPE: Instant
 POWER: None
 TOUGHNESS: None
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
-TEXT:
+ORACLE TEXT:
   Create a 3/1 red Elemental creature token unless any opponent has you draw a card. Repeat this process two more times.
+PRINTED TEXT:
+  Choose up to four cards you own from outside the game and shuffle them into your library.
+  //
+  Development
+  {3}{U}{R}
+  Instant
+  Put a 3/1 red Elemental creature token into play unless an opponent lets you draw a card. Repeat this process two more times.
 RARITY: Rare
 COLOR: Blue, Red
 COLOR IDENTITY: Blue, Red

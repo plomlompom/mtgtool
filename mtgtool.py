@@ -52,9 +52,11 @@ def init_db():
                        'name, '
                        'layout, '
                        'mana_cost, '
-                       'type, '
+                       'oracle_type, '
+                       'original_type, '
                        'rarity, '
-                       'text, '
+                       'oracle_text, '
+                       'original_text, '
                        'flavor, '
                        'power, '
                        'toughness TEXT, '
@@ -138,19 +140,21 @@ def init_db():
                                    (card['id'], element))
 
         for key in ('manaCost', 'text', 'flavor', 'power', 'toughness', 'cmc',
-                    'loyalty', 'hand', 'life'):
+                    'loyalty', 'hand', 'life', 'originalType', 'originalText'):
             if key not in card:
                 card[key] = None
         cursor.execute('INSERT INTO cards ('
-                       'id, set_name, name, layout, mana_cost, type, rarity, '
-                       'text, flavor, power, toughness, cmc, loyalty, hand, '
-                       'life, use_multinames) '
-                       'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+                       'id, set_name, name, layout, mana_cost, oracle_type, '
+                       'original_type, rarity, oracle_text, original_text, '
+                       'flavor, power, toughness, cmc, loyalty, hand, life, '
+                       'use_multinames) '
+                       'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                        (card['id'], set_name, card['name'], card['layout'],
-                        card['manaCost'], card['type'], card['rarity'],
-                        card['text'], card['flavor'], card['power'],
-                        card['toughness'], card['cmc'], card['loyalty'],
-                        card['hand'], card['life'], 0))
+                        card['manaCost'], card['type'], card['originalType'],
+                        card['rarity'], card['text'], card['originalText'],
+                        card['flavor'], card['power'], card['toughness'],
+                        card['cmc'], card['loyalty'], card['hand'],
+                        card['life'], 0))
         insert_into_array_table('card_multinames', 'name', 'names')
         insert_into_array_table('card_sets', 'set_name', 'printings')
         insert_into_array_table('card_colors', 'color', 'colors')
@@ -239,8 +243,15 @@ def get_card(cursor, conn, card_name, card_set):
                           ' WHERE id = ?', (card_id,))]
             print(label, ', '.join(collection))
 
-        cursor.execute('SELECT name, layout, mana_cost, cmc, type, power, '
-                       'toughness, hand, life, flavor, text, rarity, id '
+        def print_multiline_text(text, label):
+            print(label)
+            if text is not None:
+                for line in text.split('\n'):
+                    print(' ', line)
+
+        cursor.execute('SELECT name, layout, mana_cost, cmc, oracle_type, '
+                       'original_type, power, toughness, hand, life, flavor, '
+                       'oracle_text, original_text, rarity, id '
                        'FROM cards WHERE id=?', (card_id,))
         result = cursor.fetchone()
         print('NAME:', result[0])
@@ -248,24 +259,16 @@ def get_card(cursor, conn, card_name, card_set):
         print('LAYOUT:', result[1])
         print('MANA COST:', result[2])
         print('CONVERTED MANA COST:', result[3])
-        print('TYPE:', result[4])
-        print('POWER:', result[5])
-        print('TOUGHNESS:', result[6])
-        print('MAX HAND SIZE MODIFIER:', result[7])
-        print('STARTING LIFE TOTAL MODIFIER:', result[8])
-        print('FLAVOR:')
-        flavor = []
-        if result[9] is not None:
-            flavor = result[9].split('\n')
-            for line in flavor:
-                print(' ', line)
-        print('TEXT:')
-        text = []
-        if result[10] is not None:
-            text = result[10].split('\n')
-            for line in text:
-                print(' ', line)
-        print('RARITY:', result[11])
+        print('CURRENT TYPE:', result[4])
+        print('PRINTED TYPE:', result[5])
+        print('POWER:', result[6])
+        print('TOUGHNESS:', result[7])
+        print('MAX HAND SIZE MODIFIER:', result[8])
+        print('STARTING LIFE TOTAL MODIFIER:', result[9])
+        print_multiline_text(result[10], 'FLAVOR:')
+        print_multiline_text(result[11], 'ORACLE TEXT:')
+        print_multiline_text(result[12], 'PRINTED TEXT:')
+        print('RARITY:', result[13])
         print_array_field('card_colors', 'color', 'COLOR:')
         print_array_field('card_color_identities', 'color_identity',
                           'COLOR IDENTITY:')
