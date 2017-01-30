@@ -410,6 +410,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self.win_height = win_height
             self.pad = curses.newpad(self.pad_height, self.pad_width)
             self.scroll_offset = 0
+            self.card_name = ''
 
         def scroll_up(self):
             if self.scroll_offset > 0:
@@ -421,25 +422,27 @@ def browse_cards(stdscr, cursor, conn, card_count):
 
         def draw(self, card_name):
             import unicodedata
-            self.pad.clear()
-            card_desc_lines = get_card(cursor, conn, card_name)
-            new_height = 0
-            for i in range(len(card_desc_lines)):
-                line = card_desc_lines[i]
-                padding = 0
-                len_line = 0
-                for c in line:
-                    if 'W' == unicodedata.east_asian_width(c):
-                        len_line += 2
-                    else:
-                        len_line += 1
-                padding = self.pad_width - (len_line % self.pad_width)
-                line += ' ' * padding
-                new_height += int((len_line + padding) / self.pad_width)
-                card_desc_lines[i] = line
-            self.pad_height = max(self.win_height, new_height)
-            self.pad.resize(self.pad_height + 1, self.pad_width)
-            self.pad.addstr(0, 0, ''.join(card_desc_lines))
+            if card_name != self.card_name:
+                self.card_name = card_name
+                self.pad.clear()
+                card_desc_lines = get_card(cursor, conn, card_name)
+                new_height = 0
+                for i in range(len(card_desc_lines)):
+                    line = card_desc_lines[i]
+                    padding = 0
+                    len_line = 0
+                    for c in line:
+                        if 'W' == unicodedata.east_asian_width(c):
+                            len_line += 2
+                        else:
+                            len_line += 1
+                    padding = self.pad_width - (len_line % self.pad_width)
+                    line += ' ' * padding
+                    new_height += int((len_line + padding) / self.pad_width)
+                    card_desc_lines[i] = line
+                self.pad_height = max(self.win_height, new_height)
+                self.pad.resize(self.pad_height + 1, self.pad_width)
+                self.pad.addstr(0, 0, ''.join(card_desc_lines))
             self.pad.noutrefresh(self.scroll_offset, 0,
                                  0, self.start_x + 1,
                                  self.win_height - 1,
