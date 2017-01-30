@@ -17,6 +17,8 @@ def parse_args():
     parser.add_argument('-t', dest='card_translation', action='store',
                         help='translated name of a card for which to retrieve'
                         ' english original name')
+    parser.add_argument('-d', dest='deck_file_name', action='store',
+                        help='card deck file to browse in curses interface')
     return parser, parser.parse_args()
 
 
@@ -233,42 +235,45 @@ def get_translated_original_name(cursor, conn, translation):
                 used_name_language_combos += [name_language_combo]
 
 
-def get_card(cursor, conn, card_name, card_set):
+def get_card(cursor, conn, card_name, card_set=None):
 
     def print_card(card_id):
 
         def print_array_field(table, key, label):
+            nonlocal output
             collection = [row[0] for row in
                           cursor.execute('SELECT ' + key + ' FROM ' + table +
                           ' WHERE id = ?', (card_id,))]
-            print(label, ', '.join(collection))
+            output += [label + ' ' + ', '.join(collection)]
 
         def print_multiline_text(text, label):
-            print(label)
+            nonlocal output
+            output += [label]
             if text is not None:
                 for line in text.split('\n'):
-                    print(' ', line)
+                    output += ['  ' + line]
 
+        nonlocal output
         cursor.execute('SELECT name, layout, mana_cost, cmc, oracle_type, '
                        'original_type, power, toughness, hand, life, flavor, '
                        'oracle_text, original_text, rarity, id '
                        'FROM cards WHERE id=?', (card_id,))
         result = cursor.fetchone()
-        print('NAME:', result[0])
+        output += ['NAME: ' + result[0]]
         print_array_field('card_multinames', 'name', 'NAMES:')
-        print('LAYOUT:', result[1])
-        print('MANA COST:', result[2])
-        print('CONVERTED MANA COST:', result[3])
-        print('CURRENT TYPE:', result[4])
-        print('PRINTED TYPE:', result[5])
-        print('POWER:', result[6])
-        print('TOUGHNESS:', result[7])
-        print('MAX HAND SIZE MODIFIER:', result[8])
-        print('STARTING LIFE TOTAL MODIFIER:', result[9])
+        output += ['LAYOUT: ' + result[1]]
+        output += ['MANA COST: ' + str(result[2])]
+        output += ['CONVERTED MANA COST: ' + str(result[3])]
+        output += ['CURRENT TYPE: ' + result[4]]
+        output += ['PRINTED TYPE: ' + result[5]]
+        output += ['POWER: ' + str(result[6])]
+        output += ['TOUGHNESS: ' + str(result[7])]
+        output += ['MAX HAND SIZE MODIFIER: ' + str(result[8])]
+        output += ['STARTING LIFE TOTAL MODIFIER: ' + str(result[9])]
         print_multiline_text(result[10], 'FLAVOR:')
         print_multiline_text(result[11], 'ORACLE TEXT:')
         print_multiline_text(result[12], 'PRINTED TEXT:')
-        print('RARITY:', result[13])
+        output += ['RARITY: ' + result[13]]
         print_array_field('card_colors', 'color', 'COLOR:')
         print_array_field('card_color_identities', 'color_identity',
                           'COLOR IDENTITY:')
@@ -276,20 +281,20 @@ def get_card(cursor, conn, card_name, card_set):
         print_array_field('card_types', 'type', 'TYPES:')
         print_array_field('card_subtypes', 'subtype', 'SUBTYPES:')
         print_array_field('card_sets', 'set_name', 'PRINTINGS:')
-        print('RULINGS:')
+        output += ['RULINGS:']
         for row in cursor.execute('SELECT date, text FROM card_rulings '
                                   'WHERE id = ?', (card_id,)):
-            print(' ', row[0] + ':', row[1])
-        print('LEGALITIES:')
+            output += ['  ' + row[0] + ': ' + row[1]]
+        output += ['LEGALITIES:']
         for row in cursor.execute('SELECT format, legality '
                                   'FROM card_legalities '
                                   'WHERE id = ?', (card_id,)):
-            print(' ', row[0] + ':', row[1])
-        print('FOREIGN NAMES:')
+            output += ['  ' + row[0] + ': ' + row[1]]
+        output += ['FOREIGN NAMES:']
         for row in cursor.execute('SELECT language, name '
                                   'FROM card_foreign_names '
                                   'WHERE id = ?', (card_id,)):
-            print(' ', row[0] + ':', row[1])
+            output += ['  ' + row[0] + ': ' + row[1]]
 
     sorted_sets = [row[0] for row in
                    cursor.execute('SELECT name FROM sets ORDER BY date')]
@@ -298,16 +303,15 @@ def get_card(cursor, conn, card_name, card_set):
                cursor.execute('SELECT set_name, id, use_multinames '
                'FROM cards WHERE name=?', (card_name,))]
     if 0 == len(results):
-        print('Unknown card:', card_name)
-        return
+        return ['Unknown card: ' + card_name]
     set_name = results[0]['set']
     sets_of_card = [result['set'] for result in results]
     card_choice = 0
+    output = []
     if card_set is not None:
         if card_set not in sets_of_card:
-            print('Set', card_set,
-                  'not among sets this card is featured in.')
-            return
+            return ['Set ' + card_set +
+                    'not among sets this card is featured in.']
         set_name = card_set
         card_choice = sets_of_card.index(set_name)
     elif len(results) > 1:
@@ -315,31 +319,192 @@ def get_card(cursor, conn, card_name, card_set):
             if set_name_i in sets_of_card:
                 set_name = set_name_i
         card_choice = sets_of_card.index(set_name)
-        print('There are multiple printings of this card in different sets. '
-              'Showing the printing of newest set:', set_name)
+        output += ['There are multiple printings of this card in different '
+                   'sets. Showing the printing of newest set: ' + set_name]
     selected_id = results[card_choice]['id']
     use_multinames = results[card_choice]['use_multinames']
     if 1 == use_multinames:
         names = [row[0] for row in
                  cursor.execute('SELECT name FROM card_multinames '
                                 'WHERE id=?', (selected_id,))]
-        print('Card is split:')
+        output += ['Card is split:']
         for name in names:
-            print('//')
+            output += ['//']
             cursor.execute('SELECT id FROM cards '
                            'WHERE name=? AND set_name=?', (name, set_name))
             result = cursor.fetchone()
             print_card(result[0])
     else:
         print_card(selected_id)
+    return output
+
+
+def browse_cards(stdscr, cursor, conn, card_count):
+
+    class CardList:
+
+        def __init__(self, card_count, pad_width, win_height):
+            self.card_count = card_count
+            self.pad_width = pad_width
+            self.win_height = win_height
+            self.n_lines = len(self.card_count)
+            self.count_width = max([len(str(self.card_count[key]))
+                                    for key in self.card_count])
+            self.pad = curses.newpad(self.n_lines + 1, self.pad_width)
+            self.names = [key for key in self.card_count]
+            self.names.sort()
+            self.line_focus = 0
+            self.selected_card = self.names[self.line_focus]
+            self.scroll_offset = 0
+            self.scroll_start = self.win_height // 2
+            self.scroll_end = self.n_lines - (self.win_height // 2)
+
+        def scroll_up(self):
+            if self.line_focus > 0:
+                self.line_focus -= 1
+                self.selected_card = self.names[self.line_focus]
+                if self.line_focus >= self.scroll_start and \
+                        self.line_focus < self.scroll_end:
+                    self.scroll_offset -= 1
+
+        def scroll_down(self):
+            if self.line_focus < self.n_lines - 1:
+                self.line_focus += 1
+                self.selected_card = self.names[self.line_focus]
+                if self.line_focus > self.scroll_start and \
+                        self.line_focus <= self.scroll_end:
+                    self.scroll_offset = self.scroll_offset + 1
+
+        def draw(self):
+            self.pad.clear()
+            for i in range(self.n_lines):
+                if self.scroll_offset != 0 and i == self.scroll_offset:
+                    self.pad.addstr(i, 0, '^'*self.pad_width, curses.A_REVERSE)
+                    continue
+                elif self.scroll_offset + self.win_height < self.n_lines and \
+                        i == self.scroll_offset + self.win_height - 1:
+                    self.pad.addstr(i, 0, 'v'*self.pad_width, curses.A_REVERSE)
+                    continue
+                if i == self.line_focus:
+                    attr = curses.A_REVERSE
+                else:
+                    attr = curses.A_NORMAL
+                card_name = self.names[i]
+                count_str = str(self.card_count[card_name])
+                count_pad = self.count_width - len(count_str)
+                line = ' ' * count_pad + str(self.card_count[card_name]) + \
+                       ' ' + card_name
+                if len(line) > self.pad_width:
+                    line = line[0:self.pad_width - 1] + '…'
+                self.pad.addstr(i, 0, line, attr)
+            self.pad.noutrefresh(self.scroll_offset, 0,
+                                 0, 0,
+                                 self.win_height - 1, self.pad_width - 1)
+
+    class CardDescription:
+
+        def __init__(self, start_x, win_width, win_height):
+            self.start_x = start_x
+            self.pad_width = win_width - self.start_x
+            self.pad_height = 1
+            self.win_height = win_height
+            self.pad = curses.newpad(self.pad_height, self.pad_width)
+            self.scroll_offset = 0
+
+        def scroll_up(self):
+            if self.scroll_offset > 0:
+                self.scroll_offset -= 1
+
+        def scroll_down(self):
+            if self.scroll_offset < self.pad_height - self.win_height:
+                self.scroll_offset += 1
+
+        def draw(self, card_name):
+            import unicodedata
+            self.pad.clear()
+            card_desc_lines = get_card(cursor, conn, card_name)
+            new_height = 0
+            for i in range(len(card_desc_lines)):
+                line = card_desc_lines[i]
+                padding = 0
+                len_line = 0
+                for c in line:
+                    if 'W' == unicodedata.east_asian_width(c):
+                        len_line += 2
+                    else:
+                        len_line += 1
+                padding = self.pad_width - (len_line % self.pad_width)
+                line += ' ' * padding
+                new_height += int((len_line + padding) / self.pad_width)
+                card_desc_lines[i] = line
+            self.pad_height = max(self.win_height, new_height)
+            self.pad.resize(self.pad_height + 1, self.pad_width)
+            self.pad.addstr(0, 0, ''.join(card_desc_lines))
+            self.pad.noutrefresh(self.scroll_offset, 0,
+                                 0, self.start_x + 1,
+                                 self.win_height - 1,
+                                 self.start_x + self.pad_width - 1)
+
+    class Window:
+
+        def __init__(self):
+            curses.curs_set(False)
+            stdscr.clear()
+            stdscr.refresh()  # due to <http://stackoverflow.com/a/26305933>
+            self.height = curses.LINES
+            self.width = curses.COLS
+
+        def draw_vertical_line(self, col):
+            for line in range(self.height):
+                stdscr.addch(line, col, '|')
+
+    # TODO: Handle <http://stackoverflow.com/questions/7063128/>?
+    window = Window()
+    card_list_width = 30
+    card_list = CardList(card_count, card_list_width, window.height)
+    card_desc = CardDescription(card_list_width, window.width, window.height)
+    window.draw_vertical_line(card_list_width)
+    key = ''
+    while key != 'q':
+        card_list.draw()
+        card_desc.draw(card_list.selected_card)
+        curses.doupdate()
+        key = stdscr.getkey()
+        if 'w' == key:
+            card_list.scroll_up()
+            card_desc.scroll_offset = 0
+        elif 's' == key:
+            card_list.scroll_down()
+            card_desc.scroll_offset = 0
+        elif 'k' == key:
+            card_desc.scroll_up()
+        elif 'j' == key:
+            card_desc.scroll_down()
 
 
 argparser, args = parse_args()
 cursor, conn = init_db()
-if args.card_translation:
+if args.deck_file_name:
+    import os.path
+    if not os.path.isfile(args.deck_file_name):
+        print('No deck file:', args.deck_file_name)
+    else:
+        f = open(args.deck_file_name, 'r')
+        deck_lines = [line.rstrip() for line in f.readlines()]
+        card_count = {}
+        for line in deck_lines:
+            count, name = line.split(maxsplit=1)
+            count = int(count)
+            if name not in card_count:
+                card_count[name] = 0
+            card_count[name] += count
+        import curses
+        curses.wrapper(browse_cards, cursor, conn, card_count)
+elif args.card_translation:
     get_translated_original_name(cursor, conn, args.card_translation)
 elif args.card_name:
-    get_card(cursor, conn, args.card_name, args.card_set)
+    [print(line) for line
+     in get_card(cursor, conn, args.card_name, args.card_set)]
 else:
     argparser.print_help()
 conn.close()
