@@ -410,7 +410,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self.win_height = win_height
             self.pad = curses.newpad(self.pad_height, self.pad_width)
             self.scroll_offset = 0
-            self.card_name = ''
+            self.descriptions = {}
 
         def scroll_up(self):
             if self.scroll_offset > 0:
@@ -420,29 +420,37 @@ def browse_cards(stdscr, cursor, conn, card_count):
             if self.scroll_offset < self.pad_height - self.win_height:
                 self.scroll_offset += 1
 
-        def draw(self, card_name):
+        def get_content(self, card_name):
             import unicodedata
-            if card_name != self.card_name:
-                self.card_name = card_name
-                self.pad.clear()
-                card_desc_lines = get_card(cursor, conn, card_name)
-                new_height = 0
-                for i in range(len(card_desc_lines)):
-                    line = card_desc_lines[i]
-                    padding = 0
-                    len_line = 0
-                    for c in line:
-                        if 'W' == unicodedata.east_asian_width(c):
-                            len_line += 2
-                        else:
-                            len_line += 1
-                    padding = self.pad_width - (len_line % self.pad_width)
-                    line += ' ' * padding
-                    new_height += int((len_line + padding) / self.pad_width)
-                    card_desc_lines[i] = line
-                self.pad_height = max(self.win_height, new_height)
-                self.pad.resize(self.pad_height + 1, self.pad_width)
-                self.pad.addstr(0, 0, ''.join(card_desc_lines))
+            card_desc_lines = get_card(cursor, conn, card_name)
+            new_height = 0
+            for i in range(len(card_desc_lines)):
+                line = card_desc_lines[i]
+                padding = 0
+                len_line = 0
+                for c in line:
+                    if 'W' == unicodedata.east_asian_width(c):
+                        len_line += 2
+                    else:
+                        len_line += 1
+                padding = self.pad_width - (len_line % self.pad_width)
+                line += ' ' * padding
+                new_height += int((len_line + padding) / self.pad_width)
+                card_desc_lines[i] = line
+            description = {
+                'content': ''.join(card_desc_lines),
+                'pad_height': max(self.win_height, new_height)
+            }
+            self.descriptions[card_name] = description
+
+        def draw(self, card_name):
+            self.pad.clear()
+            if card_name not in self.descriptions:
+                self.get_content(card_name)
+            self.pad_height = self.descriptions[card_name]['pad_height']
+            content = self.descriptions[card_name]['content']
+            self.pad.resize(self.pad_height + 1, self.pad_width)
+            self.pad.addstr(0, 0, content)
             self.pad.noutrefresh(self.scroll_offset, 0,
                                  0, self.start_x + 1,
                                  self.win_height - 1,
