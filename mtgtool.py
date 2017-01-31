@@ -341,23 +341,43 @@ def get_card(cursor, conn, card_name, card_set=None):
 
 def browse_cards(stdscr, cursor, conn, card_count):
 
-    class CardList:
+    class Pane:
+
+        def __init__(self, win_height):
+            self.start_x = 0
+            self.win_height = win_height - 1
+            self.scroll_offset = 0
+
+        def draw(self, *args):
+            self.pad.clear()
+            self.draw_content(args)
+            if self.scroll_offset != 0:
+                self.pad.addstr(self.scroll_offset, 0,
+                                '^'*self.pad_width, curses.A_REVERSE)
+            if self.pad_height - self.win_height > self.scroll_offset:
+                self.pad.addstr(self.scroll_offset + self.win_height - 1, 0,
+                                self.pad_width*'v', curses.A_REVERSE)
+            self.pad.noutrefresh(self.scroll_offset, 0,
+                                 0, self.start_x + 1,
+                                 self.win_height - 1,
+                                 self.start_x + self.pad_width - 1)
+
+    class CardList(Pane):
 
         def __init__(self, card_count, pad_width, win_height):
+            super().__init__(win_height)
             self.card_count = card_count
             self.pad_width = pad_width
-            self.win_height = win_height - 1
-            self.n_lines = len(self.card_count)
+            self.pad_height = len(self.card_count)
             self.count_width = max([len(str(self.card_count[key]))
                                     for key in self.card_count])
-            self.pad = curses.newpad(self.n_lines + 1, self.pad_width)
+            self.pad = curses.newpad(self.pad_height + 1, self.pad_width)
             self.names = [key for key in self.card_count]
             self.names.sort()
             self.line_focus = 0
             self.selected_card = self.names[self.line_focus]
-            self.scroll_offset = 0
             self.scroll_start = self.win_height // 2
-            self.scroll_end = self.n_lines - (self.win_height // 2)
+            self.scroll_end = self.pad_height - (self.win_height // 2)
 
         def scroll_up(self):
             if self.line_focus > 0:
@@ -368,23 +388,15 @@ def browse_cards(stdscr, cursor, conn, card_count):
                     self.scroll_offset -= 1
 
         def scroll_down(self):
-            if self.line_focus < self.n_lines - 1:
+            if self.line_focus < self.pad_height - 1:
                 self.line_focus += 1
                 self.selected_card = self.names[self.line_focus]
                 if self.line_focus > self.scroll_start and \
                         self.line_focus <= self.scroll_end:
                     self.scroll_offset = self.scroll_offset + 1
 
-        def draw(self):
-            self.pad.clear()
-            for i in range(self.n_lines):
-                if self.scroll_offset != 0 and i == self.scroll_offset:
-                    self.pad.addstr(i, 0, '^'*self.pad_width, curses.A_REVERSE)
-                    continue
-                elif self.scroll_offset + self.win_height < self.n_lines and \
-                        i == self.scroll_offset + self.win_height - 1:
-                    self.pad.addstr(i, 0, 'v'*self.pad_width, curses.A_REVERSE)
-                    continue
+        def draw_content(self, *args):
+            for i in range(self.pad_height):
                 if i == self.line_focus:
                     attr = curses.A_REVERSE
                 else:
@@ -397,19 +409,15 @@ def browse_cards(stdscr, cursor, conn, card_count):
                 if len(line) > self.pad_width:
                     line = line[0:self.pad_width - 1] + '…'
                 self.pad.addstr(i, 0, line, attr)
-            self.pad.noutrefresh(self.scroll_offset, 0,
-                                 0, 0,
-                                 self.win_height - 1, self.pad_width - 1)
 
-    class CardDescription:
+    class CardDescription(Pane):
 
         def __init__(self, start_x, win_width, win_height):
+            super().__init__(win_height)
             self.start_x = start_x
             self.pad_width = win_width - self.start_x
             self.pad_height = 1
-            self.win_height = win_height - 1
             self.pad = curses.newpad(self.pad_height, self.pad_width)
-            self.scroll_offset = 0
             self.descriptions = {}
 
         def scroll_up(self):
@@ -443,18 +451,14 @@ def browse_cards(stdscr, cursor, conn, card_count):
             }
             self.descriptions[card_name] = description
 
-        def draw(self, card_name):
-            self.pad.clear()
+        def draw_content(self, args):
+            card_name = args[0]
             if card_name not in self.descriptions:
                 self.get_content(card_name)
             self.pad_height = self.descriptions[card_name]['pad_height']
             content = self.descriptions[card_name]['content']
             self.pad.resize(self.pad_height + 1, self.pad_width)
             self.pad.addstr(0, 0, content)
-            self.pad.noutrefresh(self.scroll_offset, 0,
-                                 0, self.start_x + 1,
-                                 self.win_height - 1,
-                                 self.start_x + self.pad_width - 1)
 
     class Window:
 
