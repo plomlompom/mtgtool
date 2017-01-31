@@ -346,7 +346,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
         def __init__(self, card_count, pad_width, win_height):
             self.card_count = card_count
             self.pad_width = pad_width
-            self.win_height = win_height
+            self.win_height = win_height - 1
             self.n_lines = len(self.card_count)
             self.count_width = max([len(str(self.card_count[key]))
                                     for key in self.card_count])
@@ -407,7 +407,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self.start_x = start_x
             self.pad_width = win_width - self.start_x
             self.pad_height = 1
-            self.win_height = win_height
+            self.win_height = win_height - 1
             self.pad = curses.newpad(self.pad_height, self.pad_width)
             self.scroll_offset = 0
             self.descriptions = {}
@@ -469,12 +469,27 @@ def browse_cards(stdscr, cursor, conn, card_count):
             for line in range(self.height):
                 stdscr.addch(line, col, '|')
 
-    # TODO: Handle <http://stackoverflow.com/questions/7063128/>?
+        def draw_bottom_help(self, startcol, endcol, text):
+            # Workaround for <http://stackoverflow.com/questions/7063128/>.
+            if endcol == self.width - 1:
+                endcol -= 1
+                stdscr.addch(self.height - 1, self.width - 2, ' ',
+                             curses.A_REVERSE)
+                stdscr.insstr(self.height - 1, self.width - 2, ' ')
+            width = endcol - startcol + 1
+            if len(text) < width:
+                text += ' '*(width - len(text))
+            stdscr.addstr(self.height - 1, startcol, text, curses.A_REVERSE)
+
     window = Window()
     card_list_width = 30
     card_list = CardList(card_count, card_list_width, window.height)
     card_desc = CardDescription(card_list_width, window.width, window.height)
     window.draw_vertical_line(card_list_width)
+    window.draw_bottom_help(0, card_list_width - 1,
+                            'move up: "w"; move down: "s"')
+    window.draw_bottom_help(card_list_width + 1, window.width - 1,
+                            'move up: "k"; move down: "j"')
     key = ''
     while key != 'q':
         card_list.draw()
