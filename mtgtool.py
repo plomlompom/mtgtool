@@ -371,13 +371,13 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self.pad_height = len(self.card_count)
             self.count_width = max([len(str(self.card_count[key]))
                                     for key in self.card_count])
-            self.pad = curses.newpad(self.pad_height + 1, self.pad_width)
+            self.pad = curses.newpad(self.pad_height, self.pad_width)
             self.names = [key for key in self.card_count]
             self.names.sort()
             self.line_focus = 0
             self.selected_card = self.names[self.line_focus]
             self.scroll_start = self.win_height // 2
-            self.scroll_end = self.pad_height - (self.win_height // 2)
+            self.scroll_end = self.pad_height - (self.win_height // 2) - 1
 
         def scroll_up(self):
             if self.line_focus > 0:
