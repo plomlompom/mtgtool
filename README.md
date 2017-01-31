@@ -89,11 +89,8 @@ passed to the `-t` option:
     'Seelenfeuer' is the German name for: Soul's Fire
 
 Deck files of the format "each line an integer followed by a space followed by
-a card name" can be opened for browsing with the `-b` option. An ncurses
-interface consisting of two windows will appear. On the left side, the list of
-counted cards sorted alphabetically by name can be navigated through with the
-keys 'w' (up) and 's' (down). On the right side, the data for the card thus
-selected can be scrolled up with 'k' and down with 'j'.
+a card name" can be opened for browsing in an ncurses interface with the `-b`
+option.
 
 testing
 -------
