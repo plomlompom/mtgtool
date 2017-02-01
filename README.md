@@ -116,3 +116,7 @@ todo
 ----
 
 Make DB updating a command line option.
+
+Make card name search more tolerant (case-insensitive?).
+
+Broaden support for deck file formats.
