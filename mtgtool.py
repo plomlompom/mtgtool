@@ -22,7 +22,16 @@ def parse_args():
     return parser, parser.parse_args()
 
 
-def init_db():
+def get_db_paths():
+    import os
+    db_dir = os.getenv('HOME') + '/.mtgtool/'
+    import os.path
+    if not os.path.exists(db_dir):
+        os.makedirs(db_dir)
+    return db_dir, db_dir + 'db.sqlite'
+
+
+def init_db(db_dir, sql_file):
 
     def get_mtg_dict(db_dir):
         print('Retrieving JSON of all MTG card sets …')
@@ -40,6 +49,7 @@ def init_db():
         print('Creating sqlite DB …')
         mtgjson_dict = json.load(mtgjson_file)
         mtgjson_file.close()
+        import os
         os.remove(json_file_path)
         os.remove(json_zipped_file_path)
         return mtgjson_dict
@@ -183,13 +193,8 @@ def init_db():
                                (card['id'], legality['format'],
                                 legality['legality']))
 
-    import os
-    db_dir = os.getenv('HOME') + '/.mtgtool/'
-    import os.path
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-    sql_file = db_dir + 'db.sqlite'
     import sqlite3
+    import os.path
     if not (os.path.isfile(sql_file)):
         print('No MTG card sets DB found, constructing it in ' + db_dir + ' …')
         mtgjson_dict = get_mtg_dict(db_dir)
@@ -412,13 +417,27 @@ def browse_cards(stdscr, cursor, conn, card_count):
 
     class CardDescription(Pane):
 
-        def __init__(self, start_x, win_width, win_height):
+        def __init__(self, start_x, win_width, win_height, card_names):
             super().__init__(win_height)
             self.start_x = start_x
             self.pad_width = win_width - self.start_x
             self.pad_height = 1
             self.pad = curses.newpad(self.pad_height, self.pad_width)
             self.descriptions = {}
+            import threading
+            self.card_names = card_names
+            t = threading.Thread(target=self.collect_cards)
+            t.start()
+
+        def collect_cards(self):
+            import sqlite3
+            try:
+                conn = sqlite3.connect(sql_file)
+                cursor = conn.cursor()
+                for card in self.card_names:
+                    self.get_content(cursor, conn, card)
+            finally:
+                conn.close()
 
         def scroll_up(self):
             if self.scroll_offset > 0:
@@ -428,7 +447,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             if self.scroll_offset < self.pad_height - self.win_height:
                 self.scroll_offset += 1
 
-        def get_content(self, card_name):
+        def get_content(self, cursor, conn, card_name):
             import unicodedata
             card_desc_lines = get_card(cursor, conn, card_name)
             new_height = 0
@@ -454,7 +473,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
         def draw_content(self, args):
             card_name = args[0]
             if card_name not in self.descriptions:
-                self.get_content(card_name)
+                self.get_content(cursor, conn, card_name)
             self.pad_height = self.descriptions[card_name]['pad_height']
             content = self.descriptions[card_name]['content']
             self.pad.resize(self.pad_height + 1, self.pad_width)
@@ -488,7 +507,8 @@ def browse_cards(stdscr, cursor, conn, card_count):
     window = Window()
     card_list_width = 30
     card_list = CardList(card_count, card_list_width, window.height)
-    card_desc = CardDescription(card_list_width, window.width, window.height)
+    card_desc = CardDescription(card_list_width, window.width, window.height,
+                                card_list.names)
     window.draw_vertical_line(card_list_width)
     window.draw_bottom_help(0, card_list_width - 1,
                             'move up: "w"; move down: "s"')
@@ -512,8 +532,9 @@ def browse_cards(stdscr, cursor, conn, card_count):
             card_desc.scroll_down()
 
 
+db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
-cursor, conn = init_db()
+cursor, conn = init_db(db_dir, sql_file)
 if args.deck_file_name:
     import os.path
     if not os.path.isfile(args.deck_file_name):
@@ -538,3 +559,4 @@ elif args.card_name:
 else:
     argparser.print_help()
 conn.close()
+exit()

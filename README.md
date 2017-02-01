@@ -116,5 +116,3 @@ todo
 ----
 
 Make DB updating a command line option.
-
-Fix slowness of ncurses card browser.
