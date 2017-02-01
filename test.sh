@@ -13,6 +13,9 @@ diff_test()
   fi
 }
 
+# Remove DB, so its initialization/creation is checked.
+rm -rf ~/.mtgtool/
+
 # Set up test directory, run file creations.
 generated_files_dir=./test/test_dir
 mkdir -p "$generated_files_dir"
