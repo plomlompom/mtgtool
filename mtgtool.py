@@ -550,6 +550,8 @@ if args.deck_file_name:
                 card_count[name] = 0
             card_count[name] += count
         import curses
+        import sys
+        sys.stderr = open('error_log', 'w')
         curses.wrapper(browse_cards, cursor, conn, card_count)
 elif args.card_translation:
     get_translated_original_name(cursor, conn, args.card_translation)
