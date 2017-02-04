@@ -362,7 +362,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
                 self._pad.addstr(self.scroll_offset + self._win_height - 1, 0,
                                  self._win_width*'v', curses.A_REVERSE)
             self._pad.noutrefresh(self.scroll_offset, 0,
-                                  0, self._start_x + 1,
+                                  0, self._start_x,
                                   self._win_height - 1,
                                   self._start_x + self._win_width - 1)
 
@@ -523,7 +523,8 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self._x_separator = x_separator
             self._card_list = CardList(card_count, self._x_separator,
                                        self._height)
-            self._card_desc = CardDescription(self._x_separator, self._width,
+            self._card_desc = CardDescription(self._x_separator + 1,
+                                              self._width,
                                               self._height,
                                               self._card_list.names)
             self._draw_frames()
