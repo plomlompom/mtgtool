@@ -659,7 +659,7 @@ def parse_deck_file(path):
                 is_new = False
         if is_new:
             entry_list += [DeckEntry(name, count, is_sideboard)]
-    if 0 == len(deck_lines):
+    if 0 == len(entry_list):
         print('Deck empty.')
         return None, None
     return entry_list, has_sideboard
