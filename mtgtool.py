@@ -633,32 +633,91 @@ class DeckEntry():
 
 def parse_deck_file(path):
     import re
-    f = open(path, 'r')
-    deck_lines = f.readlines()
-    regex_correctness = r'^\s*(//.*|(SB:)?\s*\d+\s+\S.*)?$'
-    regex_capture = r'^\s*(//.*|(SB:)?\s*(\d+)\s+(\S.*?)\s*)?$'
-    for i in range(len(deck_lines)):
-        if re.match(regex_correctness, deck_lines[i]) is None:
-            print('Deck file malformed on line ' + str(i + 1))
-            return None, None
-    entry_list = []
-    has_sideboard = False
-    for line in deck_lines:
-        matches = re.match(regex_capture, line).group(2, 3, 4)
-        if matches[1] is None:
-            continue
-        is_sideboard = matches[0] is not None
-        has_sideboard = True if is_sideboard else has_sideboard
+    import os.path
+
+    def check_lines_by_regex(deck_lines, regex_correctness):
+        for i in range(len(deck_lines)):
+            if re.match(regex_correctness, deck_lines[i]) is None:
+                return 'Deck file malformed on line ' + str(i + 1)
+        return None
+
+    def add_match_to_entry_list(entry_list, matches, is_sideboarded):
         count = int(matches[1])
         name = matches[2]
         is_new = True
         for i in range(len(entry_list)):
             entry = entry_list[i]
-            if entry.name == name and entry.is_sideboard == is_sideboard:
+            if entry.name == name and entry.is_sideboard == is_sideboarded:
                 entry_list[i].count += count
                 is_new = False
         if is_new:
-            entry_list += [DeckEntry(name, count, is_sideboard)]
+            entry_list += [DeckEntry(name, count, is_sideboarded)]
+
+    def try_format_1():
+        # Test correctness.
+        regex_correctness = r'^\s*(//.*|(SB:)?\s*\d+\s+\S.*)?$'
+        err = check_lines_by_regex(deck_lines, regex_correctness)
+        if err:
+            return None, None, 'Format 1: Error: ' + err
+        # Parse.
+        regex_capture = r'^\s*(//.*|(SB:)?\s*(\d+)\s+(\S.*?)\s*)?$'
+        entry_list = []
+        has_sideboard = False
+        for line in deck_lines:
+            matches = re.match(regex_capture, line).group(2, 3, 4)
+            if matches[1] is None:
+                continue
+            is_sideboard = matches[0] is not None
+            has_sideboard = True if is_sideboard else has_sideboard
+            add_match_to_entry_list(entry_list, matches, is_sideboard)
+        return entry_list, has_sideboard, ''
+
+    def try_format_2():
+        # Test correctness.
+        err_prefix = 'Format 2: Error: '
+        regex_correctness = r'^\s*(//.*|Sideboard\s*|\d+\s+\S.*)?$'
+        err = check_lines_by_regex(deck_lines, regex_correctness)
+        if err:
+            return None, None, err_prefix + err
+        regex_capture = r'^\s*(//.*|(Sideboard\s*)|(\d+)\s+(\S.*?)\s*)?$'
+        has_sideboard = False
+        sideboard_empty = True
+        for line in deck_lines:
+            matches = re.match(regex_capture, line).group(2, 3, 4)
+            if matches[0] is not None:
+                if has_sideboard:
+                    return None, None, err_prefix +\
+                           'More than one "Sideboard" line in deck file.'
+                has_sideboard = True
+            elif has_sideboard and matches[1] is not None:
+                sideboard_empty = False
+        if has_sideboard and sideboard_empty:
+            return None, None, err_prefix + 'Sideboard defined, but empty.'
+        # Parse.
+        entry_list = []
+        in_sideboard = False
+        for line in deck_lines:
+            matches = re.match(regex_capture, line).group(2, 3, 4)
+            if matches[0]:
+                in_sideboard = True
+                continue
+            if matches[1] is None:
+                continue
+            add_match_to_entry_list(entry_list, matches, in_sideboard)
+        return entry_list, in_sideboard, ''
+
+    if not os.path.isfile(path):
+        print('No deck file:', path)
+        return None, None
+    f = open(path, 'r')
+    deck_lines = f.readlines()
+    entry_list, has_sideboard, err_format_1 = try_format_1()
+    if entry_list is None:
+        entry_list, has_sideboard, err_format_2 = try_format_2()
+    if entry_list is None:
+        print(err_format_1)
+        print(err_format_2)
+        return None, None
     if 0 == len(entry_list):
         print('Deck empty.')
         return None, None
@@ -668,26 +727,18 @@ def parse_deck_file(path):
 db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
 cursor, conn = init_db(db_dir, sql_file)
-import os.path
 if args.deck_file_name_debug:
-    if not os.path.isfile(args.deck_file_name_debug):
-        print('No deck file:', args.deck_file_name_debug)
-    else:
-        entry_list, _ = parse_deck_file(args.deck_file_name_debug)
+    entry_list, _ = parse_deck_file(args.deck_file_name_debug)
     if entry_list:
         for entry in entry_list:
             print(entry.is_sideboard, entry.count, entry.name)
 elif args.deck_file_name:
-    if not os.path.isfile(args.deck_file_name):
-        print('No deck file:', args.deck_file_name)
-    else:
-        entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
-        if entry_list:
-            import curses
-            import sys
-            sys.stderr = open('error_log', 'w')
-            curses.wrapper(browse_cards, cursor, conn, entry_list,
-                           has_sideboard)
+    entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
+    if entry_list:
+        import curses
+        import sys
+        sys.stderr = open('error_log', 'w')
+        curses.wrapper(browse_cards, cursor, conn, entry_list, has_sideboard)
 elif args.card_translation:
     get_translated_original_name(cursor, conn, args.card_translation)
 elif args.card_name:

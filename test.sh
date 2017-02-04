@@ -19,6 +19,7 @@ rm -rf ~/.mtgtool/
 # Set up test directory, run file creations.
 generated_files_dir=./test/test_dir
 expected_files_dir=./test/test_files
+rm -rf "$generated_files_dir"
 mkdir -p "$generated_files_dir"
 ./mtgtool.py > /dev/null
 ./mtgtool.py -c 'Raging Goblin' > "$generated_files_dir"/RagingGoblin
@@ -28,7 +29,8 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
 ./mtgtool.py -c 'Assassinate' -p 'PC1' > "$generated_files_dir"/Assassinate
-./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good > "$generated_files_dir"/testdeck_good
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good_1 > "$generated_files_dir"/testdeck_good_1
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good_2 > "$generated_files_dir"/testdeck_good_2
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_empty > "$generated_files_dir"/testdeck_empty
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_1 > "$generated_files_dir"/testdeck_bad_1
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_2 > "$generated_files_dir"/testdeck_bad_2
@@ -37,6 +39,9 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_5 > "$generated_files_dir"/testdeck_bad_5
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_6 > "$generated_files_dir"/testdeck_bad_6
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_7 > "$generated_files_dir"/testdeck_bad_7
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_8 > "$generated_files_dir"/testdeck_bad_8
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_9 > "$generated_files_dir"/testdeck_bad_9
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_10 > "$generated_files_dir"/testdeck_bad_10
 
 # Compare metadata files.
 for file in "$expected_files_dir"/*; do

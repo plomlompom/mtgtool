@@ -91,8 +91,17 @@ passed to the `-t` option:
 deck browser
 ------------
 
-Text files that contain deck descriptions in a specific format can be opened for
-browsing in an ncurses interface with the `-d` option.
+Text files that contain descriptions of card collections or decks in readable
+format can be opened for browsing in an ncurses interface with the `-d` option.
+In the browser, cards are sorted alphabetically, and multiple lines of the
+source file counting the same card are combined into single lines with the card
+sums added together, except where they differ in their belonging to the
+sideboard or not.
+
+The following formats are readable:
+
+deck file format 1
+~~~~~~~~~~~~~~~~~~
 
 The deck file parser ignores lines that contain only whitespace, or where the
 first non-whitespace characters are '//'. On non-ignored lines, whitespace
@@ -125,9 +134,38 @@ As an example, the following is valid to the parser:
     // the following line contains lots of trailing whitespace
     999 Cinder Glade      
 
-In the browser, cards are sorted alphabetically, and multiple lines counting
-the same card are combined into single lines with the card sums added together,
-except where they differ in their belonging to the sideboard or not.
+deck file format 2
+~~~~~~~~~~~~~~~~~~
+
+Mostly the same parsing rules apply as for format 1. The difference affects the
+sideboard marker: A 'SB:' token is not accepted, whereas a single line whose
+non-whitespace consists of the string 'Sideboard' is. All cards below this line
+are counted as belongig to the sideboard, and a file which contains this
+sideboard marker but no cards listed below it is invalid.
+
+Each line must match this regex: `^\s*(//.*|Sideboard\s*|\d+\s+\S.*)?$`
+
+As an example, the following is valid to the parser:
+
+    4 Act of Treason
+    1 Advice from the Fae
+    //in the browser, the upper and lower line will be combined to "3 Advice from the Fae"
+    2 Advice from the Fae
+      // another comment followed by an empty line
+    
+    3 4   Altar's Reap
+      2 Ancient Crab
+    // the following line is not empty, but only contains whitespace
+                              
+    // the following line contains lots of trailing whitespace
+    999 Cinder Glade      
+    
+      Sideboard  
+    
+    
+    2 Ancient Crab
+          1 Assassinate
+      1  Assassinate
 
 testing
 -------
@@ -155,5 +193,3 @@ todo
 Make DB updating a command line option.
 
 Make card name search more tolerant (case-insensitive?).
-
-Broaden support for deck file formats.

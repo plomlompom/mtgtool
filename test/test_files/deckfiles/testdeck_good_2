@@ -1,0 +1,19 @@
+4 Act of Treason
+1 Advice from the Fae
+//in the browser, the upper and lower line will be combined to "3 Advice from the Fae"
+2 Advice from the Fae
+  // another comment followed by an empty line
+
+3 4   Altar's Reap
+  2 Ancient Crab
+// the following line is not empty, but only contains whitespace
+                          
+// the following line contains lots of trailing whitespace
+999 Cinder Glade      
+
+  Sideboard  
+
+
+2 Ancient Crab
+      1 Assassinate
+  1  Assassinate
