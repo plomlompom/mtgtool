@@ -316,7 +316,7 @@ def get_card(cursor, conn, card_name, card_set=None):
     if card_set is not None:
         if card_set not in sets_of_card:
             return ['Set ' + card_set +
-                    'not among sets this card is featured in.']
+                    ' not among sets this card is featured in.']
         set_name = card_set
         card_choice = sets_of_card.index(set_name)
     elif len(results) > 1:
@@ -344,7 +344,6 @@ def get_card(cursor, conn, card_name, card_set=None):
     return output
 
 
-#def browse_cards(stdscr, cursor, conn, card_count):
 def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
 
     class Pane:
@@ -372,7 +371,7 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
         def __init__(self, entry_list, win_width, win_height, has_sideboard):
             super().__init__()
             self._has_sideboard = has_sideboard
-            self._entry_list = entry_list 
+            self._entry_list = entry_list
             self._win_width = win_width
             self._pad_height = len(self._entry_list)
             self._count_width = max([len(str(entry.count))
@@ -426,7 +425,7 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
                     if self._entry_list[i].is_sideboard:
                         sideboard_prefix = 'SB: '
                 line = sideboard_prefix + ' ' * count_pad + count_str + ' ' + \
-                       card_name
+                    card_name
                 if len(line) > self._win_width:
                     line = line[0:self._win_width - 1] + '…'
                 self._pad.addstr(i, 0, line, attr)
@@ -642,7 +641,7 @@ if args.deck_file_name:
         entry_list = []
         has_sideboard = False
         for line in deck_lines:
-            is_sideboard = False 
+            is_sideboard = False
             sideboard_suffix = 'SB: '
             if line[0:len(sideboard_suffix)] == sideboard_suffix:
                 line = line[len(sideboard_suffix):]
