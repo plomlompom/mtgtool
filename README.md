@@ -92,7 +92,7 @@ deck browser
 ------------
 
 Text files that contain deck descriptions in a specific format can be opened for
-browsing in an ncurses interface with the `-b` option.
+browsing in an ncurses interface with the `-d` option.
 
 The deck file parser ignores lines that contain only whitespace, or where the
 first non-whitespace characters are '//'. On non-ignored lines, whitespace
