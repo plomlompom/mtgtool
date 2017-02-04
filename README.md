@@ -4,8 +4,8 @@ mtgtool
 This is a primitive "Magic: The Gathering" card data viewer for the console. It
 uses the card data from <http://mtgjson.com>.
 
-usage
------
+basic usage
+-----------
 
 On the first run, `mtgtool.py` pulls the card data from <http://mtgjson.com/>,
 and builds below `~/.mtgtool/` an sqlite DB from it.
@@ -88,9 +88,44 @@ passed to the `-t` option:
     'Seelenfeuer' is the German name for: Soul Burn
     'Seelenfeuer' is the German name for: Soul's Fire
 
-Deck files of the format "each line an integer followed by a space followed by
-a card name; whole line optionally prefixed with 'SB: ' to mark a sideboard" can
-be opened for browsing in an ncurses interface with the `-b` option.
+deck browser
+------------
+
+Text files that contain deck descriptions in a specific format can be opened for
+browsing in an ncurses interface with the `-b` option.
+
+The deck file parser ignores lines that contain only whitespace, or where the
+first non-whitespace characters are '//'. On non-ignored lines, whitespace
+sequences on the start and the end of the line are ignored. The first
+non-whitespace token per line must be either 'SB:' (which marks the entry as
+cards belonging to a sideboard), or an integer; if the first token is 'SB:', it
+must be followed by any (or no) amount of whitespace, and an integer as the
+second token. The integer describes the amount of cards described by the line.
+After the integer, a positive number of whitespace characters must follow, and
+after those a positive number of characters (the first of which must be
+non-whitespace) that ought to match an English MTG card name.
+
+As an example, the following text would be understood properly by the parser:
+
+    4 Act of Treason
+    1 Advice from the Fae
+    // some comment
+    2 Advice from the Fae
+      // another comment followed by an empty line
+    
+    3    Altar's Reap
+      2 Ancient Crab
+    // the following line is not empty, but only contains whitespace
+                              
+    SB:2 Ancient Crab
+      SB:    1 Assassinate
+      SB:1  Assassinate
+    // the following line contains lots of trailing whitespace
+    1 Cinder Glade      
+
+In the browser, cards are sorted alphabetically, and multiple lines counting
+the same card are combined into single lines with the card sums added together,
+except where they differ in their belonging to the sideboard or not.
 
 testing
 -------

@@ -628,6 +628,33 @@ class DeckEntry():
         self.is_sideboard = is_sideboard
 
 
+def parse_deck_file(path):
+
+    f = open(path, 'r')
+    deck_lines = [line.lstrip().rstrip() for line in f.readlines()]
+    entry_list = []
+    has_sideboard = False
+    for line in deck_lines:
+        if len(line) == 0 or line[:2] == '//':
+            continue
+        is_sideboard = False
+        sideboard_suffix = 'SB:'
+        if line[0:len(sideboard_suffix)] == sideboard_suffix:
+            line = line[len(sideboard_suffix):].lstrip()
+            has_sideboard = is_sideboard = True
+        count, name = line.split(maxsplit=1)
+        count = int(count)
+        is_new = True
+        for i in range(len(entry_list)):
+            entry = entry_list[i]
+            if entry.name == name and entry.is_sideboard == is_sideboard:
+                entry_list[i].count += count
+                is_new = False
+        if is_new:
+            entry_list += [DeckEntry(name, count, is_sideboard)]
+    return entry_list, has_sideboard
+
+
 db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
 cursor, conn = init_db(db_dir, sql_file)
@@ -636,26 +663,7 @@ if args.deck_file_name:
     if not os.path.isfile(args.deck_file_name):
         print('No deck file:', args.deck_file_name)
     else:
-        f = open(args.deck_file_name, 'r')
-        deck_lines = [line.rstrip() for line in f.readlines()]
-        entry_list = []
-        has_sideboard = False
-        for line in deck_lines:
-            is_sideboard = False
-            sideboard_suffix = 'SB: '
-            if line[0:len(sideboard_suffix)] == sideboard_suffix:
-                line = line[len(sideboard_suffix):]
-                has_sideboard = is_sideboard = True
-            count, name = line.split(maxsplit=1)
-            count = int(count)
-            is_new = True
-            for i in range(len(entry_list)):
-                entry = entry_list[i]
-                if entry.name == name and entry.is_sideboard == is_sideboard:
-                    entry_list[i].count += count
-                    is_new = False
-            if is_new:
-                entry_list += [DeckEntry(name, count, is_sideboard)]
+        entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
         import curses
         import sys
         sys.stderr = open('error_log', 'w')
