@@ -133,8 +133,8 @@ As an example, the following is valid to the parser:
 ### deck file format 2
 
 Mostly the same parsing rules apply as for format 1. The difference affects the
-sideboard marker: A `SB:` token is not accepted, whereas a single line whose
-non-whitespace consists of the string 'Sideboard' is. All cards below this line
+sideboard marker: An `SB:` token is not accepted, whereas a single line whose
+non-whitespace consists of the string `Sideboard` is. All cards below this line
 are counted as belongig to the sideboard, and a file which contains this
 sideboard marker but no cards listed below it is invalid.
 
