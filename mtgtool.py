@@ -564,7 +564,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             draw_bottom_help(0, self._x_separator - 1,
                              'move up: "w"; move down: "s"')
             draw_bottom_help(self._x_separator + 1, self._width - 1,
-                             'move up: "k"; move down: "j"')
+                             'scroll up: "k"; scroll down: "j"')
 
         def draw_frame_insides(self):
             self._card_list.draw()
