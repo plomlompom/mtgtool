@@ -348,94 +348,119 @@ def browse_cards(stdscr, cursor, conn, card_count):
 
     class Pane:
 
-        def __init__(self, win_height):
-            self.start_x = 0
-            self.win_height = win_height - 1
+        def __init__(self):
+            self._start_x = 0
             self.scroll_offset = 0
 
-        def draw(self, *args):
-            self.pad.clear()
-            self.draw_content(args)
+        def draw(self):
+            self._pad.clear()
+            self._draw_content()
             if self.scroll_offset != 0:
-                self.pad.addstr(self.scroll_offset, 0,
-                                '^'*self.pad_width, curses.A_REVERSE)
-            if self.pad_height - self.win_height > self.scroll_offset:
-                self.pad.addstr(self.scroll_offset + self.win_height - 1, 0,
-                                self.pad_width*'v', curses.A_REVERSE)
-            self.pad.noutrefresh(self.scroll_offset, 0,
-                                 0, self.start_x + 1,
-                                 self.win_height - 1,
-                                 self.start_x + self.pad_width - 1)
+                self._pad.addstr(self.scroll_offset, 0,
+                                 '^'*self._win_width, curses.A_REVERSE)
+            if self._pad_height - self._win_height > self.scroll_offset:
+                self._pad.addstr(self.scroll_offset + self._win_height - 1, 0,
+                                 self._win_width*'v', curses.A_REVERSE)
+            self._pad.noutrefresh(self.scroll_offset, 0,
+                                  0, self._start_x + 1,
+                                  self._win_height - 1,
+                                  self._start_x + self._win_width - 1)
 
     class CardList(Pane):
 
-        def __init__(self, card_count, pad_width, win_height):
-            super().__init__(win_height)
-            self.card_count = card_count
-            self.pad_width = pad_width
-            self.pad_height = len(self.card_count)
-            self.count_width = max([len(str(self.card_count[key]))
-                                    for key in self.card_count])
-            self.pad = curses.newpad(self.pad_height, self.pad_width)
-            self.names = [key for key in self.card_count]
+        def __init__(self, card_count, win_width, win_height):
+            super().__init__()
+            self._card_count = card_count
+            self.names = [key for key in self._card_count]
             self.names.sort()
-            self.line_focus = 0
-            self.selected_card = self.names[self.line_focus]
-            self.scroll_start = self.win_height // 2
-            self.scroll_end = self.pad_height - (self.win_height // 2) - 1
+            self._win_width = win_width
+            self._pad_height = len(self._card_count)
+            self._count_width = max([len(str(self._card_count[key]))
+                                    for key in self._card_count])
+            self._line_focus = 0
+            self.set_geometry(win_height)
+            self._pad = curses.newpad(self._pad_height, self._win_width)
 
-        def scroll_up(self):
-            if self.line_focus > 0:
-                self.line_focus -= 1
-                self.selected_card = self.names[self.line_focus]
-                if self.line_focus >= self.scroll_start and \
-                        self.line_focus < self.scroll_end:
-                    self.scroll_offset -= 1
+        def set_geometry(self, win_height):
+            self._win_height = win_height - 1
+            self._scroll_start = self._win_height // 2
+            self._scroll_end = max(0,
+                                   self._pad_height - (self._win_height //
+                                                       2) - 1)
+            self.selected_card = self.names[0]
+            self._scroll()
 
-        def scroll_down(self):
-            if self.line_focus < self.pad_height - 1:
-                self.line_focus += 1
-                self.selected_card = self.names[self.line_focus]
-                if self.line_focus > self.scroll_start and \
-                        self.line_focus <= self.scroll_end:
-                    self.scroll_offset = self.scroll_offset + 1
+        def _scroll(self):
+            if self._win_height >= self._pad_height or \
+                    self._line_focus < self._scroll_start:
+                self.scroll_offset = 0
+            elif self._line_focus > self._scroll_end:
+                self.scroll_offset = self._pad_height - self._win_height
+            else:
+                self.scroll_offset = self._line_focus - (self._win_height // 2)
 
-        def draw_content(self, *args):
-            for i in range(self.pad_height):
-                if i == self.line_focus:
+        def move_up(self):
+            if self._line_focus > 0:
+                self._line_focus -= 1
+                self.selected_card = self.names[self._line_focus]
+                self._scroll()
+
+        def move_down(self):
+            if self._line_focus < self._pad_height - 1:
+                self._line_focus += 1
+                self.selected_card = self.names[self._line_focus]
+                self._scroll()
+
+        def _draw_content(self, *args):
+            for i in range(self._pad_height):
+                if i == self._line_focus:
                     attr = curses.A_REVERSE
                 else:
                     attr = curses.A_NORMAL
                 card_name = self.names[i]
-                count_str = str(self.card_count[card_name])
-                count_pad = self.count_width - len(count_str)
-                line = ' ' * count_pad + str(self.card_count[card_name]) + \
+                count_str = str(self._card_count[card_name])
+                count_pad = self._count_width - len(count_str)
+                line = ' ' * count_pad + str(self._card_count[card_name]) + \
                        ' ' + card_name
-                if len(line) > self.pad_width:
-                    line = line[0:self.pad_width - 1] + '…'
-                self.pad.addstr(i, 0, line, attr)
+                if len(line) > self._win_width:
+                    line = line[0:self._win_width - 1] + '…'
+                self._pad.addstr(i, 0, line, attr)
 
     class CardDescription(Pane):
 
         def __init__(self, start_x, win_width, win_height, card_names):
-            super().__init__(win_height)
-            self.start_x = start_x
-            self.pad_width = win_width - self.start_x
-            self.pad_height = 1
-            self.pad = curses.newpad(self.pad_height, self.pad_width)
-            self.descriptions = {}
+            super().__init__()
+            self._start_x = start_x
+            self._pad_height = 1
+            self.set_geometry(win_height, win_width)
+            self._descriptions = {}
+            self._pad = curses.newpad(self._pad_height, self._win_width)
+            self._card_names = card_names
             import threading
-            self.card_names = card_names
-            t = threading.Thread(target=self.collect_cards)
+            t = threading.Thread(target=self._collect_cards)
             t.start()
 
-        def collect_cards(self):
+        def set_geometry(self, win_height, win_width):
+            self._win_height = win_height - 1
+            self._win_width = win_width - self._start_x
+            if hasattr(self, '_card_name'):
+                self._draw_content()
+            if self.scroll_offset != 0:
+                if self._win_height >= self._pad_height:
+                    self.scroll_offset = 0
+                elif self.scroll_offset > self._pad_height - self._win_height:
+                    self.scroll_offset = self._pad_height - self._win_height
+
+        def set_card(self, card_name):
+            self._card_name = card_name
+
+        def _collect_cards(self):
             import sqlite3
             try:
                 conn = sqlite3.connect(sql_file)
                 cursor = conn.cursor()
-                for card in self.card_names:
-                    self.get_content(cursor, conn, card)
+                for card in self._card_names:
+                    self._get_content(cursor, conn, card)
             finally:
                 conn.close()
 
@@ -444,13 +469,19 @@ def browse_cards(stdscr, cursor, conn, card_count):
                 self.scroll_offset -= 1
 
         def scroll_down(self):
-            if self.scroll_offset < self.pad_height - self.win_height:
+            if self.scroll_offset < self._pad_height - self._win_height:
                 self.scroll_offset += 1
 
-        def get_content(self, cursor, conn, card_name):
+        def _get_content(self, cursor, conn, card_name):
+            self._descriptions[card_name] = get_card(cursor, conn, card_name)
+
+        def _draw_content(self):
+            if self._card_name not in self._descriptions:
+                self._get_content(cursor, conn, self._card_name)
+            card_desc_lines = self._descriptions[self._card_name]
+            height = 0
+            fixed_lines = []
             import unicodedata
-            card_desc_lines = get_card(cursor, conn, card_name)
-            new_height = 0
             for i in range(len(card_desc_lines)):
                 line = card_desc_lines[i]
                 padding = 0
@@ -460,76 +491,107 @@ def browse_cards(stdscr, cursor, conn, card_count):
                         len_line += 2
                     else:
                         len_line += 1
-                padding = self.pad_width - (len_line % self.pad_width)
+                padding = self._win_width - (len_line % self._win_width)
                 line += ' ' * padding
-                new_height += int((len_line + padding) / self.pad_width)
-                card_desc_lines[i] = line
-            description = {
-                'content': ''.join(card_desc_lines),
-                'pad_height': max(self.win_height, new_height)
-            }
-            self.descriptions[card_name] = description
-
-        def draw_content(self, args):
-            card_name = args[0]
-            if card_name not in self.descriptions:
-                self.get_content(cursor, conn, card_name)
-            self.pad_height = self.descriptions[card_name]['pad_height']
-            content = self.descriptions[card_name]['content']
-            self.pad.resize(self.pad_height + 1, self.pad_width)
-            self.pad.addstr(0, 0, content)
+                height += int((len_line + padding) / self._win_width)
+                fixed_lines += [line]
+            content = ''.join(fixed_lines)
+            self._pad_height = max(self._win_height, height)
+            self._pad.resize(self._pad_height + 1, self._win_width)
+            self._pad.addstr(0, 0, content)
 
     class Window:
 
-        def __init__(self):
+        def __init__(self, x_separator, card_count):
             curses.curs_set(False)
+            self._set_geometry()
+            self._x_separator = x_separator
+            self._card_list = CardList(card_count, self._x_separator,
+                                       self._height)
+            self._card_desc = CardDescription(self._x_separator, self._width,
+                                              self._height,
+                                              self._card_list.names)
+            self._draw_frames()
+
+        def _set_geometry(self):
             stdscr.clear()
             stdscr.refresh()  # due to <http://stackoverflow.com/a/26305933>
-            self.height = curses.LINES
-            self.width = curses.COLS
+            self._height = curses.LINES
+            self._width = curses.COLS
 
-        def draw_vertical_line(self, col):
-            for line in range(self.height):
-                stdscr.addch(line, col, '|')
+        def reset(self):
+            import shutil
+            size = shutil.get_terminal_size()
+            curses.resizeterm(size.lines, size.columns)
+            self._set_geometry()
+            self._card_list.set_geometry(self._height)
+            self._card_desc.set_geometry(self._height, self._width)
+            self._draw_frames()
+            self.draw_frame_insides()
 
-        def draw_bottom_help(self, startcol, endcol, text):
-            # Workaround for <http://stackoverflow.com/questions/7063128/>.
-            if endcol == self.width - 1:
-                endcol -= 1
-                stdscr.addch(self.height - 1, self.width - 2, ' ',
-                             curses.A_REVERSE)
-                stdscr.insstr(self.height - 1, self.width - 2, ' ')
-            width = endcol - startcol + 1
-            if len(text) < width:
-                text += ' '*(width - len(text))
-            stdscr.addstr(self.height - 1, startcol, text, curses.A_REVERSE)
+        def _draw_frames(self):
 
-    window = Window()
+            def draw_bottom_help(startcol, endcol, text):
+                # Workaround for <http://stackoverflow.com/questions/7063128/>.
+                if endcol == self._width - 1:
+                    endcol -= 1
+                    stdscr.addch(self._height - 1, self._width - 2, ' ',
+                                 curses.A_REVERSE)
+                    stdscr.insstr(self._height - 1, self._width - 2, ' ')
+                width = endcol - startcol + 1
+                if len(text) < width:
+                    text += ' '*(width - len(text))
+                stdscr.addstr(self._height - 1, startcol,
+                              text, curses.A_REVERSE)
+
+            for line in range(self._height):
+                stdscr.addch(line, self._x_separator, '|')
+            draw_bottom_help(0, self._x_separator - 1,
+                             'move up: "w"; move down: "s"')
+            draw_bottom_help(self._x_separator + 1, self._width - 1,
+                             'move up: "k"; move down: "j"')
+
+        def draw_frame_insides(self):
+            self._card_list.draw()
+            self._card_desc.set_card(self._card_list.selected_card)
+            self._card_desc.draw()
+            curses.doupdate()
+
+        def move_card_index_up(self):
+            self._card_list.move_up()
+            self._card_desc.scroll_offset = 0
+
+        def move_card_index_down(self):
+            self._card_list.move_down()
+            self._card_desc.scroll_offset = 0
+
+        def scroll_desc_up(self):
+            self._card_desc.scroll_up()
+
+        def scroll_desc_down(self):
+            self._card_desc.scroll_down()
+
     card_list_width = 30
-    card_list = CardList(card_count, card_list_width, window.height)
-    card_desc = CardDescription(card_list_width, window.width, window.height,
-                                card_list.names)
-    window.draw_vertical_line(card_list_width)
-    window.draw_bottom_help(0, card_list_width - 1,
-                            'move up: "w"; move down: "s"')
-    window.draw_bottom_help(card_list_width + 1, window.width - 1,
-                            'move up: "k"; move down: "j"')
+    window = Window(card_list_width, card_count)
     key = ''
     while key != 'q':
-        card_list.draw()
-        card_desc.draw(card_list.selected_card)
-        curses.doupdate()
-        key = stdscr.getkey()
-        if 'w' == key:
-            card_list.scroll_up()
-            card_desc.scroll_offset = 0
-        elif 's' == key:
-            card_list.scroll_down()
-            card_desc.scroll_offset = 0
-        elif 'k' == key:
-            card_desc.scroll_up()
-        elif 'j' == key:
-            card_desc.scroll_down()
+        window.draw_frame_insides()
+        ch = stdscr.getch()
+        if curses.KEY_RESIZE == ch:
+            window.reset()
+            # For some reason, terminal resizing fills the getch() input queue
+            # with an endless amount of KEY_RESIZE, so flushinp to the rescue.
+            curses.flushinp()
+        else:
+            key = chr(ch)
+            if 'w' == key:
+                window.move_card_index_up()
+            elif 's' == key:
+                window.move_card_index_down()
+            elif 'k' == key:
+                window.scroll_desc_up()
+            elif 'j' == key:
+                window.scroll_desc_down()
 
 
 db_dir, sql_file = get_db_paths()
