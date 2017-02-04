@@ -100,10 +100,10 @@ The following formats are readable:
 ### deck file format 1
 
 The deck file parser ignores lines that contain only whitespace, or where the
-first non-whitespace characters are '//'. On non-ignored lines, whitespace
+first non-whitespace characters are `//`. On non-ignored lines, whitespace
 sequences on the start and the end of the line are ignored. The first
-non-whitespace token per line must be either 'SB:' (which marks the entry as
-cards belonging to a sideboard), or an integer; if the first token is 'SB:', it
+non-whitespace token per line must be either `SB:` (which marks the entry as
+cards belonging to a sideboard), or an integer; if the first token is `SB:`, it
 must be followed by any (or no) amount of whitespace, and an integer as the
 second token. The integer describes the amount of cards described by the line.
 After the integer, a positive number of whitespace characters must follow, and
@@ -133,7 +133,7 @@ As an example, the following is valid to the parser:
 ### deck file format 2
 
 Mostly the same parsing rules apply as for format 1. The difference affects the
-sideboard marker: A 'SB:' token is not accepted, whereas a single line whose
+sideboard marker: A `SB:` token is not accepted, whereas a single line whose
 non-whitespace consists of the string 'Sideboard' is. All cards below this line
 are counted as belongig to the sideboard, and a file which contains this
 sideboard marker but no cards listed below it is invalid.
