@@ -659,6 +659,9 @@ def parse_deck_file(path):
                 is_new = False
         if is_new:
             entry_list += [DeckEntry(name, count, is_sideboard)]
+    if 0 == len(deck_lines):
+        print('Deck empty.')
+        return None, None
     return entry_list, has_sideboard
 
 
@@ -671,8 +674,9 @@ if args.deck_file_name_debug:
         print('No deck file:', args.deck_file_name_debug)
     else:
         entry_list, _ = parse_deck_file(args.deck_file_name_debug)
-    for entry in entry_list:
-        print(entry.is_sideboard, entry.count, entry.name)
+    if entry_list:
+        for entry in entry_list:
+            print(entry.is_sideboard, entry.count, entry.name)
 elif args.deck_file_name:
     if not os.path.isfile(args.deck_file_name):
         print('No deck file:', args.deck_file_name)

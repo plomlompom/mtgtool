@@ -28,7 +28,8 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
 ./mtgtool.py -c 'Assassinate' -p 'PC1' > "$generated_files_dir"/Assassinate
-./mtgtool.py --test-parser ./test/test_files/deckfiles/testdeck_good > "$generated_files_dir"/testdeck_good
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good > "$generated_files_dir"/testdeck_good
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_empty > "$generated_files_dir"/testdeck_empty
 
 # Compare metadata files.
 for file in "$expected_files_dir"/*; do
