@@ -437,8 +437,32 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self._pad = curses.newpad(self._pad_height, self._win_width)
             self._card_names = card_names
             import threading
-            t = threading.Thread(target=self._collect_cards)
-            t.start()
+
+            class CardCollector(threading.Thread):
+
+                def __init__(self, card_names, card_descriptions):
+                    self._names = card_names
+                    self._descs = card_descriptions
+                    self._stopper = threading.Event()
+                    super().__init__(group=None)
+
+                def run(self):
+                    import sqlite3
+                    conn = sqlite3.connect(sql_file)
+                    cursor = conn.cursor()
+                    for name in self._names:
+                        if self._stopper.isSet():
+                            break
+                        if name not in self._descs:
+                            self._descs[name] = get_card(cursor, conn, name)
+                    conn.close()
+
+                def kill(self):
+                    self._stopper.set()
+
+            self._card_collector = CardCollector(self._card_names,
+                                                 self._descriptions)
+            self._card_collector.start()
 
         def set_geometry(self, win_height, win_width):
             self._win_height = win_height - 1
@@ -454,16 +478,6 @@ def browse_cards(stdscr, cursor, conn, card_count):
         def set_card(self, card_name):
             self._card_name = card_name
 
-        def _collect_cards(self):
-            import sqlite3
-            try:
-                conn = sqlite3.connect(sql_file)
-                cursor = conn.cursor()
-                for card in self._card_names:
-                    self._get_content(cursor, conn, card)
-            finally:
-                conn.close()
-
         def scroll_up(self):
             if self.scroll_offset > 0:
                 self.scroll_offset -= 1
@@ -472,12 +486,13 @@ def browse_cards(stdscr, cursor, conn, card_count):
             if self.scroll_offset < self._pad_height - self._win_height:
                 self.scroll_offset += 1
 
-        def _get_content(self, cursor, conn, card_name):
-            self._descriptions[card_name] = get_card(cursor, conn, card_name)
+        def stop_card_collector(self):
+            self._card_collector.kill()
 
         def _draw_content(self):
             if self._card_name not in self._descriptions:
-                self._get_content(cursor, conn, self._card_name)
+                self._descriptions[self._card_name] = get_card(cursor, conn,
+                                                               self._card_name)
             card_desc_lines = self._descriptions[self._card_name]
             height = 0
             fixed_lines = []
@@ -571,6 +586,9 @@ def browse_cards(stdscr, cursor, conn, card_count):
         def scroll_desc_down(self):
             self._card_desc.scroll_down()
 
+        def quit(self):
+            self._card_desc.stop_card_collector()
+
     card_list_width = 30
     window = Window(card_list_width, card_count)
     key = ''
@@ -592,6 +610,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
                 window.scroll_desc_up()
             elif 'j' == key:
                 window.scroll_desc_down()
+    window.quit()
 
 
 db_dir, sql_file = get_db_paths()
