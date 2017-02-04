@@ -26,6 +26,7 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py -t 'Sturmgeist' > "$generated_files_dir"/Sturmgeist
 ./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
+./mtgtool.py -c 'Assassinate' -p 'PC1' > "$generated_files_dir"/Assassinate
 
 # Compare metadata files.
 for file in ./test/test_files/*; do

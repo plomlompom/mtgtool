@@ -105,7 +105,7 @@ After the integer, a positive number of whitespace characters must follow, and
 after those a positive number of characters (the first of which must be
 non-whitespace) that ought to match an English MTG card name.
 
-As an example, the following text would be understood properly by the parser:
+As an example, the following is valid to the parser:
 
     4 Act of Treason
     1 Advice from the Fae
@@ -121,7 +121,7 @@ As an example, the following text would be understood properly by the parser:
       SB:    1 Assassinate
       SB:1  Assassinate
     // the following line contains lots of trailing whitespace
-    1 Cinder Glade      
+    999 Cinder Glade      
 
 In the browser, cards are sorted alphabetically, and multiple lines counting
 the same card are combined into single lines with the card sums added together,
