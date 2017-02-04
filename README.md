@@ -109,7 +109,7 @@ As an example, the following text would be understood properly by the parser:
 
     4 Act of Treason
     1 Advice from the Fae
-    // some comment
+    //in the browser, the upper and lower line will be combined to "3 Advice from the Fae"
     2 Advice from the Fae
       // another comment followed by an empty line
     
@@ -155,3 +155,5 @@ Make DB updating a command line option.
 Make card name search more tolerant (case-insensitive?).
 
 Broaden support for deck file formats.
+
+Extend tests. (Deck parsing is not tested at all currently.)
