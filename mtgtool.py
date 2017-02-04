@@ -629,21 +629,25 @@ class DeckEntry():
 
 
 def parse_deck_file(path):
-
+    import re
     f = open(path, 'r')
-    deck_lines = [line.lstrip().rstrip() for line in f.readlines()]
+    deck_lines = f.readlines()
+    regex_correctness = r'^\s*(|//|(SB:)?\s*\d+\s*\S)'
+    regex_capture = r'^\s*(//.*|(SB:)?\s*(\d+)\s*(\S.*?)\s*)?$'
+    for i in range(len(deck_lines)):
+        if re.match(regex_correctness, deck_lines[i]) is None:
+            print('Deck file malformed on line ' + str(i + 1))
+            return None, None
     entry_list = []
     has_sideboard = False
     for line in deck_lines:
-        if len(line) == 0 or line[:2] == '//':
+        matches = re.match(regex_capture, line).group(2, 3, 4)
+        if matches[1] is None:
             continue
-        is_sideboard = False
-        sideboard_suffix = 'SB:'
-        if line[0:len(sideboard_suffix)] == sideboard_suffix:
-            line = line[len(sideboard_suffix):].lstrip()
-            has_sideboard = is_sideboard = True
-        count, name = line.split(maxsplit=1)
-        count = int(count)
+        is_sideboard = matches[0] is not None
+        has_sideboard = True if is_sideboard else has_sideboard
+        count = int(matches[1])
+        name = matches[2]
         is_new = True
         for i in range(len(entry_list)):
             entry = entry_list[i]
@@ -664,10 +668,12 @@ if args.deck_file_name:
         print('No deck file:', args.deck_file_name)
     else:
         entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
-        import curses
-        import sys
-        sys.stderr = open('error_log', 'w')
-        curses.wrapper(browse_cards, cursor, conn, entry_list, has_sideboard)
+        if entry_list:
+            import curses
+            import sys
+            sys.stderr = open('error_log', 'w')
+            curses.wrapper(browse_cards, cursor, conn, entry_list,
+                           has_sideboard)
 elif args.card_translation:
     get_translated_original_name(cursor, conn, args.card_translation)
 elif args.card_name:
