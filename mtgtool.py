@@ -387,7 +387,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self._scroll_end = max(0,
                                    self._pad_height - (self._win_height //
                                                        2) - 1)
-            self.selected_card = self.names[0]
+            self.selected_card = self.names[self._line_focus]
             self._scroll()
 
         def _scroll(self):
