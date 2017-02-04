@@ -344,7 +344,8 @@ def get_card(cursor, conn, card_name, card_set=None):
     return output
 
 
-def browse_cards(stdscr, cursor, conn, card_count):
+#def browse_cards(stdscr, cursor, conn, card_count):
+def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
 
     class Pane:
 
@@ -368,15 +369,14 @@ def browse_cards(stdscr, cursor, conn, card_count):
 
     class CardList(Pane):
 
-        def __init__(self, card_count, win_width, win_height):
+        def __init__(self, entry_list, win_width, win_height, has_sideboard):
             super().__init__()
-            self._card_count = card_count
-            self.names = [key for key in self._card_count]
-            self.names.sort()
+            self._has_sideboard = has_sideboard
+            self._entry_list = entry_list 
             self._win_width = win_width
-            self._pad_height = len(self._card_count)
-            self._count_width = max([len(str(self._card_count[key]))
-                                    for key in self._card_count])
+            self._pad_height = len(self._entry_list)
+            self._count_width = max([len(str(entry.count))
+                                    for entry in self._entry_list])
             self._line_focus = 0
             self.set_geometry(win_height)
             self._pad = curses.newpad(self._pad_height, self._win_width)
@@ -387,7 +387,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self._scroll_end = max(0,
                                    self._pad_height - (self._win_height //
                                                        2) - 1)
-            self.selected_card = self.names[self._line_focus]
+            self.selected_card = self._entry_list[self._line_focus].name
             self._scroll()
 
         def _scroll(self):
@@ -402,13 +402,13 @@ def browse_cards(stdscr, cursor, conn, card_count):
         def move_up(self):
             if self._line_focus > 0:
                 self._line_focus -= 1
-                self.selected_card = self.names[self._line_focus]
+                self.selected_card = self._entry_list[self._line_focus].name
                 self._scroll()
 
         def move_down(self):
             if self._line_focus < self._pad_height - 1:
                 self._line_focus += 1
-                self.selected_card = self.names[self._line_focus]
+                self.selected_card = self._entry_list[self._line_focus].name
                 self._scroll()
 
         def _draw_content(self, *args):
@@ -417,11 +417,16 @@ def browse_cards(stdscr, cursor, conn, card_count):
                     attr = curses.A_REVERSE
                 else:
                     attr = curses.A_NORMAL
-                card_name = self.names[i]
-                count_str = str(self._card_count[card_name])
+                card_name = self._entry_list[i].name
+                count_str = str(self._entry_list[i].count)
                 count_pad = self._count_width - len(count_str)
-                line = ' ' * count_pad + str(self._card_count[card_name]) + \
-                       ' ' + card_name
+                sideboard_prefix = ''
+                if self._has_sideboard:
+                    sideboard_prefix = '    '
+                    if self._entry_list[i].is_sideboard:
+                        sideboard_prefix = 'SB: '
+                line = sideboard_prefix + ' ' * count_pad + count_str + ' ' + \
+                       card_name
                 if len(line) > self._win_width:
                     line = line[0:self._win_width - 1] + '…'
                 self._pad.addstr(i, 0, line, attr)
@@ -517,16 +522,18 @@ def browse_cards(stdscr, cursor, conn, card_count):
 
     class Window:
 
-        def __init__(self, x_separator, card_count):
+        def __init__(self, x_separator, entry_list, has_sideboard):
             curses.curs_set(False)
             self._set_geometry()
             self._x_separator = x_separator
-            self._card_list = CardList(card_count, self._x_separator,
-                                       self._height)
+            entry_list.sort(key=lambda card: card.name)
+            entry_list.sort(key=lambda card: card.is_sideboard)
+            self._card_list = CardList(entry_list, self._x_separator,
+                                       self._height, has_sideboard)
+            card_names = [entry.name for entry in entry_list]
             self._card_desc = CardDescription(self._x_separator + 1,
-                                              self._width,
-                                              self._height,
-                                              self._card_list.names)
+                                              self._width, self._height,
+                                              card_names)
             self._draw_frames()
 
         def _set_geometry(self):
@@ -591,7 +598,7 @@ def browse_cards(stdscr, cursor, conn, card_count):
             self._card_desc.stop_card_collector()
 
     card_list_width = 30
-    window = Window(card_list_width, card_count)
+    window = Window(card_list_width, entry_list, has_sideboard)
     key = ''
     while key != 'q':
         window.draw_frame_insides()
@@ -614,6 +621,14 @@ def browse_cards(stdscr, cursor, conn, card_count):
     window.quit()
 
 
+class DeckEntry():
+
+    def __init__(self, card_name, card_count, is_sideboard):
+        self.name = card_name
+        self.count = card_count
+        self.is_sideboard = is_sideboard
+
+
 db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
 cursor, conn = init_db(db_dir, sql_file)
@@ -624,17 +639,28 @@ if args.deck_file_name:
     else:
         f = open(args.deck_file_name, 'r')
         deck_lines = [line.rstrip() for line in f.readlines()]
-        card_count = {}
+        entry_list = []
+        has_sideboard = False
         for line in deck_lines:
+            is_sideboard = False 
+            sideboard_suffix = 'SB: '
+            if line[0:len(sideboard_suffix)] == sideboard_suffix:
+                line = line[len(sideboard_suffix):]
+                has_sideboard = is_sideboard = True
             count, name = line.split(maxsplit=1)
             count = int(count)
-            if name not in card_count:
-                card_count[name] = 0
-            card_count[name] += count
+            is_new = True
+            for i in range(len(entry_list)):
+                entry = entry_list[i]
+                if entry.name == name and entry.is_sideboard == is_sideboard:
+                    entry_list[i].count += count
+                    is_new = False
+            if is_new:
+                entry_list += [DeckEntry(name, count, is_sideboard)]
         import curses
         import sys
         sys.stderr = open('error_log', 'w')
-        curses.wrapper(browse_cards, cursor, conn, card_count)
+        curses.wrapper(browse_cards, cursor, conn, entry_list, has_sideboard)
 elif args.card_translation:
     get_translated_original_name(cursor, conn, args.card_translation)
 elif args.card_name:

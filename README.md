@@ -89,8 +89,8 @@ passed to the `-t` option:
     'Seelenfeuer' is the German name for: Soul's Fire
 
 Deck files of the format "each line an integer followed by a space followed by
-a card name" can be opened for browsing in an ncurses interface with the `-b`
-option.
+a card name; whole line optionally prefixed with 'SB: ' to mark a sideboard" can
+be opened for browsing in an ncurses interface with the `-b` option.
 
 testing
 -------
