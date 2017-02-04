@@ -19,6 +19,9 @@ def parse_args():
                         ' english original name')
     parser.add_argument('-d', dest='deck_file_name', action='store',
                         help='card deck file to browse in curses interface')
+    parser.add_argument('--test-parser',
+                        dest='deck_file_name_debug', action='store',
+                        help='run deck file through parser for debugging')
     return parser, parser.parse_args()
 
 
@@ -662,8 +665,15 @@ def parse_deck_file(path):
 db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
 cursor, conn = init_db(db_dir, sql_file)
-if args.deck_file_name:
-    import os.path
+import os.path
+if args.deck_file_name_debug:
+    if not os.path.isfile(args.deck_file_name_debug):
+        print('No deck file:', args.deck_file_name_debug)
+    else:
+        entry_list, _ = parse_deck_file(args.deck_file_name_debug)
+    for entry in entry_list:
+        print(entry.is_sideboard, entry.count, entry.name)
+elif args.deck_file_name:
     if not os.path.isfile(args.deck_file_name):
         print('No deck file:', args.deck_file_name)
     else:

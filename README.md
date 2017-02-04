@@ -158,4 +158,4 @@ Make card name search more tolerant (case-insensitive?).
 
 Broaden support for deck file formats.
 
-Extend tests. (Deck parsing is not tested at all currently.)
+Extend tests.
