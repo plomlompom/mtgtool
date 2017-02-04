@@ -105,7 +105,7 @@ After the integer, a positive number of whitespace characters must follow, and
 after those a positive number of characters (the first of which must be
 non-whitespace) that ought to match an English MTG card name.
 
-In short, each line must match this regex: `^\s*(//.*|(SB:)?\s*\d+\s*\S.*)?$`
+In short, each line must match this regex: `^\s*(//.*|(SB:)?\s*\d+\s+\S.*)?$`
 
 As an example, the following is valid to the parser:
 

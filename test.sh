@@ -32,6 +32,7 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_empty > "$generated_files_dir"/testdeck_empty
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_1 > "$generated_files_dir"/testdeck_bad_1
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_2 > "$generated_files_dir"/testdeck_bad_2
+./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_bad_3 > "$generated_files_dir"/testdeck_bad_3
 
 # Compare metadata files.
 for file in "$expected_files_dir"/*; do

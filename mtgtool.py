@@ -635,8 +635,8 @@ def parse_deck_file(path):
     import re
     f = open(path, 'r')
     deck_lines = f.readlines()
-    regex_correctness = r'^\s*(//.*|(SB:)?\s*\d+\s*\S.*)?$'
-    regex_capture = r'^\s*(//.*|(SB:)?\s*(\d+)\s*(\S.*?)\s*)?$'
+    regex_correctness = r'^\s*(//.*|(SB:)?\s*\d+\s+\S.*)?$'
+    regex_capture = r'^\s*(//.*|(SB:)?\s*(\d+)\s+(\S.*?)\s*)?$'
     for i in range(len(deck_lines)):
         if re.match(regex_correctness, deck_lines[i]) is None:
             print('Deck file malformed on line ' + str(i + 1))
