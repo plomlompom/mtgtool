@@ -1,11 +1,9 @@
-mtgtool
-=======
+# mtgtool
 
 This is a primitive "Magic: The Gathering" card data viewer for the console. It
 uses the card data from <http://mtgjson.com>.
 
-basic usage
------------
+## basic usage
 
 On the first run, `mtgtool.py` pulls the card data from <http://mtgjson.com/>,
 and builds below `~/.mtgtool/` an sqlite DB from it.
@@ -88,8 +86,7 @@ passed to the `-t` option:
     'Seelenfeuer' is the German name for: Soul Burn
     'Seelenfeuer' is the German name for: Soul's Fire
 
-deck browser
-------------
+## deck browser
 
 Text files that contain descriptions of card collections or decks in readable
 format can be opened for browsing in an ncurses interface with the `-d` option.
@@ -100,8 +97,7 @@ sideboard or not.
 
 The following formats are readable:
 
-deck file format 1
-~~~~~~~~~~~~~~~~~~
+### deck file format 1
 
 The deck file parser ignores lines that contain only whitespace, or where the
 first non-whitespace characters are '//'. On non-ignored lines, whitespace
@@ -134,8 +130,7 @@ As an example, the following is valid to the parser:
     // the following line contains lots of trailing whitespace
     999 Cinder Glade      
 
-deck file format 2
-~~~~~~~~~~~~~~~~~~
+### deck file format 2
 
 Mostly the same parsing rules apply as for format 1. The difference affects the
 sideboard marker: A 'SB:' token is not accepted, whereas a single line whose
@@ -167,28 +162,24 @@ As an example, the following is valid to the parser:
           1 Assassinate
       1  Assassinate
 
-testing
--------
+## testing
 
 Just run `./test.sh`.
 
-updating
---------
+## updating
 
 When a new set is released, the card data retrieved from <http://mtgjson.com/>
 should be updated. To do so, just trigger a rebuild of the database by deleting
 `~/.mtgtool/db.sqlite`.
 
-bugs
-----
+## bugs
 
 As of 2017-01-16, the data from <http://mtgjson.com/> is somewhat incomplete in
 regards to translated names. Some examples: German "Zwang" should not only be
 "Duress", but also "Coercion"; German "Sturmgeist" should be "Storm Spirit";
 German "Dominieren" should not only be "Domineer", but also "Dominate".
 
-todo
-----
+## todo
 
 Make DB updating a command line option.
 
