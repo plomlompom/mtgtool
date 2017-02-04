@@ -115,7 +115,7 @@ As an example, the following is valid to the parser:
     2 Advice from the Fae
       // another comment followed by an empty line
     
-    3    Altar's Reap
+    3 4   Altar's Reap
       2 Ancient Crab
     // the following line is not empty, but only contains whitespace
                               
@@ -157,5 +157,3 @@ Make DB updating a command line option.
 Make card name search more tolerant (case-insensitive?).
 
 Broaden support for deck file formats.
-
-Extend tests.
