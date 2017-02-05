@@ -184,3 +184,6 @@ German "Dominieren" should not only be "Domineer", but also "Dominate".
 Make DB updating a command line option.
 
 Make card name search more tolerant (case-insensitive?).
+
+Don't write browser error_log into current directory, rather into ~/.mtgtool/;
+and output its content on browser closing.
