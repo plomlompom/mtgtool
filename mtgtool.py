@@ -3,8 +3,7 @@
 
 mtgjson_url = 'http://mtgjson.com/json/AllSets-x.json.zip'
 
-template = \
-"""NAME: %name%
+template = """NAME: %name%
 NAMES: %names%
 LAYOUT: %layout%
 MANA COST: %mana_cost%
@@ -321,7 +320,7 @@ def get_card(cursor, conn, card_name, card_set=None):
             'rarity': result[13],
             'color': joined_collection('colors', 'color'),
             'color_identity': joined_collection('color_identities',
-                                                 'color_identity'),
+                                                'color_identity'),
             'supertypes': joined_collection('supertypes', 'supertype'),
             'types': joined_collection('types', 'type'),
             'subtypes': joined_collection('subtypes', 'subtype'),
@@ -329,7 +328,7 @@ def get_card(cursor, conn, card_name, card_set=None):
             'rulings': lines_from_db('rulings', ['date', 'text']),
             'legalities': lines_from_db('legalities', ['format', 'legality']),
             'foreign_names': lines_from_db('foreign_names',
-                                          ['language', 'name'])
+                                           ['language', 'name'])
         }
         global template
         card_desc = template.replace('%', '\x07')
