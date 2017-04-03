@@ -3,6 +3,38 @@
 
 mtgjson_url = 'http://mtgjson.com/json/AllSets-x.json.zip'
 
+template = \
+"""NAME: %name%
+NAMES: %names%
+LAYOUT: %layout%
+MANA COST: %mana_cost%
+CONVERTED MANA COST: %converted_mana_cost%
+CURRENT TYPE: %current_type%
+PRINTED TYPE: %printed_type%
+POWER: %power%
+TOUGHNESS: %toughness%
+MAX HAND SIZE MODIFIER: %max_hand_size_mod%
+STARTING LIFE TOTAL MODIFIER: %start_life_total_mod%
+FLAVOR:
+  %flavor%
+ORACLE TEXT:
+  %oracle_text%
+PRINTED TEXT:
+  %printed_text%
+RARITY: %rarity%
+COLOR: %color%
+COLOR IDENTITY: %color_identity%
+SUPERTYPES: %supertypes%
+TYPES: %types%
+SUBTYPES: %subtypes%
+PRINTINGS: %sets%
+RULINGS:
+%rulings%
+LEGALITIES:
+%legalities%
+FOREIGN NAMES:
+%foreign_names%"""
+
 
 def parse_args():
     import argparse
@@ -247,19 +279,23 @@ def get_card(cursor, conn, card_name, card_set=None):
 
     def print_card(card_id):
 
-        def print_array_field(table, key, label):
-            nonlocal output
+        def joined_collection(table, key):
             collection = [row[0] for row in
-                          cursor.execute('SELECT ' + key + ' FROM ' + table +
-                          ' WHERE id = ?', (card_id,))]
-            output += [label + ' ' + ', '.join(collection)]
+                          cursor.execute('SELECT ' + key + ' FROM card_' +
+                          table + ' WHERE id = ?', (card_id,))]
+            return ', '.join(collection)
 
-        def print_multiline_text(text, label):
-            nonlocal output
-            output += [label]
+        def multiline_text(text):
             if text is not None:
-                for line in text.split('\n'):
-                    output += ['  ' + line]
+                return text.replace('\n', '\n  ')
+            return ''
+
+        def lines_from_db(table, keys):
+            nonlocal card_id
+            return '\n'.join(
+                ['  ' + row[0] + ': ' + row[1] for row in cursor.execute(
+                 'SELECT ' + ','.join(keys) + ' FROM card_' + table +
+                 ' WHERE id=?', (card_id,))])
 
         nonlocal output
         cursor.execute('SELECT name, layout, mana_cost, cmc, oracle_type, '
@@ -267,42 +303,40 @@ def get_card(cursor, conn, card_name, card_set=None):
                        'oracle_text, original_text, rarity, id '
                        'FROM cards WHERE id=?', (card_id,))
         result = cursor.fetchone()
-        output += ['NAME: ' + result[0]]
-        print_array_field('card_multinames', 'name', 'NAMES:')
-        output += ['LAYOUT: ' + result[1]]
-        output += ['MANA COST: ' + str(result[2])]
-        output += ['CONVERTED MANA COST: ' + str(result[3])]
-        output += ['CURRENT TYPE: ' + result[4]]
-        output += ['PRINTED TYPE: ' + result[5]]
-        output += ['POWER: ' + str(result[6])]
-        output += ['TOUGHNESS: ' + str(result[7])]
-        output += ['MAX HAND SIZE MODIFIER: ' + str(result[8])]
-        output += ['STARTING LIFE TOTAL MODIFIER: ' + str(result[9])]
-        print_multiline_text(result[10], 'FLAVOR:')
-        print_multiline_text(result[11], 'ORACLE TEXT:')
-        print_multiline_text(result[12], 'PRINTED TEXT:')
-        output += ['RARITY: ' + result[13]]
-        print_array_field('card_colors', 'color', 'COLOR:')
-        print_array_field('card_color_identities', 'color_identity',
-                          'COLOR IDENTITY:')
-        print_array_field('card_supertypes', 'supertype', 'SUPERTYPES:')
-        print_array_field('card_types', 'type', 'TYPES:')
-        print_array_field('card_subtypes', 'subtype', 'SUBTYPES:')
-        print_array_field('card_sets', 'set_name', 'PRINTINGS:')
-        output += ['RULINGS:']
-        for row in cursor.execute('SELECT date, text FROM card_rulings '
-                                  'WHERE id = ?', (card_id,)):
-            output += ['  ' + row[0] + ': ' + row[1]]
-        output += ['LEGALITIES:']
-        for row in cursor.execute('SELECT format, legality '
-                                  'FROM card_legalities '
-                                  'WHERE id = ?', (card_id,)):
-            output += ['  ' + row[0] + ': ' + row[1]]
-        output += ['FOREIGN NAMES:']
-        for row in cursor.execute('SELECT language, name '
-                                  'FROM card_foreign_names '
-                                  'WHERE id = ?', (card_id,)):
-            output += ['  ' + row[0] + ': ' + row[1]]
+        d = {
+            'name': result[0],
+            'names': joined_collection('multinames', 'name'),
+            'layout': result[1],
+            'mana_cost': str(result[2]),
+            'converted_mana_cost': str(result[3]),
+            'current_type': result[4],
+            'printed_type': result[5],
+            'power': str(result[6]),
+            'toughness': str(result[7]),
+            'max_hand_size_mod': str(result[8]),
+            'start_life_total_mod': str(result[9]),
+            'flavor': multiline_text(result[10]),
+            'oracle_text': multiline_text(result[11]),
+            'printed_text': multiline_text(result[12]),
+            'rarity': result[13],
+            'color': joined_collection('colors', 'color'),
+            'color_identity': joined_collection('color_identities',
+                                                 'color_identity'),
+            'supertypes': joined_collection('supertypes', 'supertype'),
+            'types': joined_collection('types', 'type'),
+            'subtypes': joined_collection('subtypes', 'subtype'),
+            'sets': joined_collection('sets', 'set_name'),
+            'rulings': lines_from_db('rulings', ['date', 'text']),
+            'legalities': lines_from_db('legalities', ['format', 'legality']),
+            'foreign_names': lines_from_db('foreign_names',
+                                          ['language', 'name'])
+        }
+        global template
+        card_desc = template.replace('%', '\x07')
+        for key in d:
+            card_desc = card_desc.replace('\x07'+key+'\x07', d[key])
+        card_desc = card_desc.replace('\x07', '%')
+        output += card_desc.split('\n')
 
     sorted_sets = [row[0] for row in
                    cursor.execute('SELECT name FROM sets ORDER BY date')]

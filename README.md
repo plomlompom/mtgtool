@@ -25,6 +25,7 @@ card name with the `-c` option:
     MAX HAND SIZE MODIFIER: None
     STARTING LIFE TOTAL MODIFIER: None
     FLAVOR:
+      
     ORACLE TEXT:
       {T}, Sacrifice Black Lotus: Add three mana of any one color to your mana pool.
     PRINTED TEXT:
@@ -37,6 +38,7 @@ card name with the `-c` option:
     SUBTYPES: 
     PRINTINGS: LEA, LEB, 2ED, CED, CEI, VMA
     RULINGS:
+    
     LEGALITIES:
       Commander: Banned
       Legacy: Banned
@@ -61,6 +63,7 @@ rarity and the printed types and texts):
     MAX HAND SIZE MODIFIER: None
     STARTING LIFE TOTAL MODIFIER: None
     FLAVOR:
+      
     ORACLE TEXT:
       {T}, Sacrifice Black Lotus: Add three mana of any one color to your mana pool.
     PRINTED TEXT:
@@ -73,6 +76,7 @@ rarity and the printed types and texts):
     SUBTYPES: 
     PRINTINGS: LEA, LEB, 2ED, CED, CEI, VMA
     RULINGS:
+
     LEGALITIES:
       Commander: Banned
       Legacy: Banned

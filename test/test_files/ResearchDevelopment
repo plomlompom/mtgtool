@@ -12,6 +12,7 @@ TOUGHNESS: None
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
+  
 ORACLE TEXT:
   Choose up to four cards you own from outside the game and shuffle them into your library.
 PRINTED TEXT:
@@ -59,6 +60,7 @@ TOUGHNESS: None
 MAX HAND SIZE MODIFIER: None
 STARTING LIFE TOTAL MODIFIER: None
 FLAVOR:
+  
 ORACLE TEXT:
   Create a 3/1 red Elemental creature token unless any opponent has you draw a card. Repeat this process two more times.
 PRINTED TEXT:

@@ -24,6 +24,7 @@ TYPES: Creature
 SUBTYPES: Goblin, Berserker
 PRINTINGS: POR, PO2, EXO, ATH, 6ED, S99, BRB, BTD, 7ED, 8ED, 9ED, 10E, EVG, M10, DD3_EVG
 RULINGS:
+
 LEGALITIES:
   Commander: Legal
   Legacy: Legal
@@ -31,3 +32,4 @@ LEGALITIES:
   Tempest Block: Legal
   Vintage: Legal
 FOREIGN NAMES:
+
