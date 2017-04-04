@@ -25,7 +25,7 @@ card name with the `-c` option:
     MAX HAND SIZE MODIFIER: None
     STARTING LIFE TOTAL MODIFIER: None
     FLAVOR:
-      
+    
     ORACLE TEXT:
       {T}, Sacrifice Black Lotus: Add three mana of any one color to your mana pool.
     PRINTED TEXT:
@@ -63,7 +63,7 @@ rarity and the printed types and texts):
     MAX HAND SIZE MODIFIER: None
     STARTING LIFE TOTAL MODIFIER: None
     FLAVOR:
-      
+    
     ORACLE TEXT:
       {T}, Sacrifice Black Lotus: Add three mana of any one color to your mana pool.
     PRINTED TEXT:
@@ -89,6 +89,65 @@ passed to the `-t` option:
     $ ./mtgtool.py -t Seelenfeuer
     'Seelenfeuer' is the German name for: Soul Burn
     'Seelenfeuer' is the German name for: Soul's Fire
+
+### card data formatting
+
+The card data output format in the examples above is not fixed. A template
+string can be provided with the `-f` option. The string may enclose certain
+keywords in `%` symbols, to be replaced with the respective card data. Example:
+
+    $ ./mtgtool.py -c 'Thermo-Alchemist' -f 'Card name: %name% (%mana_cost%)'
+    Card name: Thermo-Alchemist ({1}{R})
+
+Some card data is iterable (cards may have more than one name, color, etc.;
+certain card texts consist of multiple lines). Here, the formatting can be
+further refined with a format name appended to data key after a `|` separator.
+The available formats are `comma` (separate items by `, `) and `indent` (each
+item its own line, indented with two whitespaces):
+
+    $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%subtypes|comma%'
+    Human, Shaman
+
+If no format is selected for such items, the default is separation by comma.
+
+    $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%subtypes|indent%'
+      Human
+      Shaman
+
+The following card data keys are legal and accept such a formatting suffix:
+
+    names
+    color
+    color_identity
+    supertypes
+    types
+    subtypes
+    sets
+    rulings
+    legalities
+    foreign_names
+
+The following card data keys are legal, but accept no formatting suffix:
+
+    name
+    layout
+    mana_cost
+    converted_mana_cost
+    current_type
+    printed_type
+    power
+    toughness
+    max_hand_size_mod
+    start_life_total_mod
+    flavor
+    oracle_text
+    printed_text
+    rarity
+
+To put a literal `%` into a template string, escape it with another `%`:
+
+    $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%%%name%%%'
+    %Thermo-Alchemist%
 
 ## deck browser
 

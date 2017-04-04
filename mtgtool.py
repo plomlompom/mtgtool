@@ -15,11 +15,11 @@ TOUGHNESS: %toughness%
 MAX HAND SIZE MODIFIER: %max_hand_size_mod%
 STARTING LIFE TOTAL MODIFIER: %start_life_total_mod%
 FLAVOR:
-  %flavor%
+%flavor|indent%
 ORACLE TEXT:
-  %oracle_text%
+%oracle_text|indent%
 PRINTED TEXT:
-  %printed_text%
+%printed_text|indent%
 RARITY: %rarity%
 COLOR: %color%
 COLOR IDENTITY: %color_identity%
@@ -28,11 +28,11 @@ TYPES: %types%
 SUBTYPES: %subtypes%
 PRINTINGS: %sets%
 RULINGS:
-%rulings%
+%rulings|indent%
 LEGALITIES:
-%legalities%
+%legalities|indent%
 FOREIGN NAMES:
-%foreign_names%"""
+%foreign_names|indent%"""
 
 
 def parse_args():
@@ -50,6 +50,8 @@ def parse_args():
                         ' english original name')
     parser.add_argument('-d', dest='deck_file_name', action='store',
                         help='card deck file to browse in curses interface')
+    parser.add_argument('-f', dest='template', action='store',
+                        help='card data formatting template')
     parser.add_argument('--test-parser',
                         dest='deck_file_name_debug', action='store',
                         help='run deck file through parser for debugging')
@@ -278,23 +280,26 @@ def get_card(cursor, conn, card_name, card_set=None):
 
     def print_card(card_id):
 
-        def joined_collection(table, key):
-            collection = [row[0] for row in
-                          cursor.execute('SELECT ' + key + ' FROM card_' +
-                          table + ' WHERE id = ?', (card_id,))]
-            return ', '.join(collection)
-
         def multiline_text(text):
             if text is not None:
-                return text.replace('\n', '\n  ')
-            return ''
+                return text.split('\n') #return '  ' + text.replace('\n', '\n  ')
+            return []
 
-        def lines_from_db(table, keys):
+        def get_list(table, keys):
             nonlocal card_id
-            return '\n'.join(
-                ['  ' + row[0] + ': ' + row[1] for row in cursor.execute(
-                 'SELECT ' + ','.join(keys) + ' FROM card_' + table +
-                 ' WHERE id=?', (card_id,))])
+            rows = [row for row in cursor.execute(
+                    'SELECT ' + ','.join(keys) + ' FROM card_' + table +
+                    ' WHERE id=?', (card_id,))]
+            if len(keys) == 1:
+                return [row[0] for row in rows]
+            else:
+                return [row[0] + ': ' + row[1] for row in rows]
+
+        def join_by_sep_rule(sep_rule, collection):
+            if sep_filter == 'indent':
+                return '\n'.join(['  ' + line for line in collection])
+            elif sep_filter == 'comma':
+                return ', '.join(collection)
 
         nonlocal output
         cursor.execute('SELECT name, layout, mana_cost, cmc, oracle_type, '
@@ -304,7 +309,7 @@ def get_card(cursor, conn, card_name, card_set=None):
         result = cursor.fetchone()
         d = {
             'name': result[0],
-            'names': joined_collection('multinames', 'name'),
+            'names': get_list('multinames', ['name']),
             'layout': result[1],
             'mana_cost': str(result[2]),
             'converted_mana_cost': str(result[3]),
@@ -318,23 +323,43 @@ def get_card(cursor, conn, card_name, card_set=None):
             'oracle_text': multiline_text(result[11]),
             'printed_text': multiline_text(result[12]),
             'rarity': result[13],
-            'color': joined_collection('colors', 'color'),
-            'color_identity': joined_collection('color_identities',
-                                                'color_identity'),
-            'supertypes': joined_collection('supertypes', 'supertype'),
-            'types': joined_collection('types', 'type'),
-            'subtypes': joined_collection('subtypes', 'subtype'),
-            'sets': joined_collection('sets', 'set_name'),
-            'rulings': lines_from_db('rulings', ['date', 'text']),
-            'legalities': lines_from_db('legalities', ['format', 'legality']),
-            'foreign_names': lines_from_db('foreign_names',
-                                           ['language', 'name'])
+            'color': get_list('colors', ['color']),
+            'color_identity': get_list('color_identities', ['color_identity']),
+            'supertypes': get_list('supertypes', ['supertype']),
+            'types': get_list('types', ['type']),
+            'subtypes': get_list('subtypes', ['subtype']),
+            'sets': get_list('sets', ['set_name']),
+            'rulings': get_list('rulings', ['date', 'text']),
+            'legalities': get_list('legalities', ['format', 'legality']),
+            'foreign_names': get_list('foreign_names', ['language', 'name'])
         }
         global template
-        card_desc = template.replace('%', '\x07')
-        for key in d:
-            card_desc = card_desc.replace('\x07'+key+'\x07', d[key])
-        card_desc = card_desc.replace('\x07', '%')
+        card_desc = template[:]
+        i_end = -1
+        while True:
+            i_start = card_desc.find('%', i_end + 1)
+            if i_start == -1:
+                break
+            i_end = card_desc.find('%', i_start + 1)
+            if i_end == -1:
+                break
+            i_filter = card_desc.find('|', i_start + 1)
+            sep_filter = 'comma'
+            var_name = ''
+            if i_filter > -1 and i_filter < i_end:
+                var_name = card_desc[i_start + 1:i_filter]
+                sep_filter = card_desc[i_filter + 1:i_end]
+            else:
+                var_name = card_desc[i_start + 1:i_end]
+            if var_name == '':
+                val = '%'
+            else:
+                val = d[var_name]
+                if type(val) is list:
+                    val = join_by_sep_rule(sep_filter, val)
+            card_desc_start = card_desc[:i_start] + val 
+            card_desc = card_desc_start + card_desc[i_end+1:]
+            i_end = len(card_desc_start) - 1 
         output += card_desc.split('\n')
 
     sorted_sets = [row[0] for row in
@@ -757,8 +782,72 @@ def parse_deck_file(path):
     return entry_list, has_sideboard
 
 
+def template_is_good(templ):
+
+    def error(msg):
+        nonlocal i_marker
+        print('Template error in ' + str(i_marker) + '-th %%: ' + msg)
+        print('Aborting due to bad card data formatting template.')
+        exit()
+
+    legal_names = {
+        'name': 0,
+        'names': 1,
+        'layout': 0,
+        'mana_cost': 0,
+        'converted_mana_cost': 0,
+        'current_type': 0,
+        'printed_type': 0,
+        'power': 0,
+        'toughness': 0,
+        'max_hand_size_mod': 0,
+        'start_life_total_mod': 0,
+        'flavor': 1,
+        'oracle_text': 1,
+        'printed_text': 1,
+        'rarity': 0,
+        'color': 1, 
+        'color_identity': 1,
+        'supertypes': 1,
+        'types': 1,
+        'subtypes': 1,
+        'sets': 1,
+        'rulings': 1,
+        'legalities': 1,
+        'foreign_names': 1,
+    }
+    legal_filters = ['indent', 'comma']
+    i_end = -1
+    i_marker = 0
+    while True:
+        i_start = templ.find('%', i_end + 1)
+        if i_start == -1:
+            return True
+        i_marker += 1
+        i_end = templ.find('%', i_start + 1)
+        if i_end == -1:
+            error('Closing % missing.')
+        i_filter = templ.find('|', i_start + 1)
+        sep_filter = ''
+        var_name = ''
+        if i_filter > -1 and i_filter < i_end:
+            var_name = templ[i_start + 1:i_filter]
+            sep_filter = templ[i_filter + 1:i_end]
+            if sep_filter not in legal_filters:
+                error('Illegal filter name: ' + sep_filter)
+        else:
+            var_name = templ[i_start + 1:i_end]
+        if var_name != '' and var_name not in legal_names:
+            error('Illegal var name: ' + var_name)
+        if sep_filter != '' and legal_names[var_name] != 1:
+            error('Filter ' + sep_filter + ' illegal for ' + var_name + '.')
+
+
 db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
+if args.template:
+    template = args.template
+template_is_good(template)
 cursor, conn = init_db(db_dir, sql_file)
 if args.deck_file_name_debug:
     entry_list, _ = parse_deck_file(args.deck_file_name_debug)

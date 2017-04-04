@@ -14,7 +14,7 @@ diff_test()
 }
 
 # Remove DB, so its initialization/creation is checked.
-rm -rf ~/.mtgtool/
+#rm -rf ~/.mtgtool/
 
 # Set up test directory, run file creations.
 generated_files_dir=./test/test_dir
@@ -29,6 +29,18 @@ mkdir -p "$generated_files_dir"
 ./mtgtool.py -t 'Wurmspiralmaschine' > "$generated_files_dir"/Wurmspiralmaschine
 ./mtgtool.py -c 'Volunteer Militia' -p 'PO2' > "$generated_files_dir"/VolunteerMilitia
 ./mtgtool.py -c 'Assassinate' -p 'PC1' > "$generated_files_dir"/Assassinate
+./mtgtool.py -f '%' > "$generated_files_dir"/template_fail_1
+./mtgtool.py -f '%%%' > "$generated_files_dir"/template_fail_2
+./mtgtool.py -f '%foo%' > "$generated_files_dir"/template_fail_3
+./mtgtool.py -f '%names|%' > "$generated_files_dir"/template_fail_4
+./mtgtool.py -f '%names|foo%' > "$generated_files_dir"/template_fail_5
+./mtgtool.py -f '%name|comma%' > "$generated_files_dir"/template_fail_6
+./mtgtool.py -c 'Raging Goblin' -f 'foo' > "$generated_files_dir"/template_success_1
+./mtgtool.py -c 'Raging Goblin' -f 'foo%%' > "$generated_files_dir"/template_success_2
+./mtgtool.py -c 'Raging Goblin' -f 'foo%%%name%%%' > "$generated_files_dir"/template_success_3
+./mtgtool.py -c 'Raging Goblin' -f 'foo%subtypes%' > "$generated_files_dir"/template_success_4
+./mtgtool.py -c 'Raging Goblin' -f 'foo%subtypes|comma%' > "$generated_files_dir"/template_success_5
+./mtgtool.py -c 'Raging Goblin' -f 'foo%subtypes|indent%' > "$generated_files_dir"/template_success_6
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good_1 > "$generated_files_dir"/testdeck_good_1
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_good_2 > "$generated_files_dir"/testdeck_good_2
 ./mtgtool.py --test-parser "$expected_files_dir"/deckfiles/testdeck_empty > "$generated_files_dir"/testdeck_empty
