@@ -92,6 +92,8 @@ passed to the `-t` option:
 
 ### card data formatting
 
+## templating
+
 The card data output format in the examples above is not fixed. A template
 string can be provided with the `-f` option. The string may enclose certain
 keywords in `%` symbols, to be replaced with the respective card data. Example:
@@ -148,6 +150,11 @@ To put a literal `%` into a template string, escape it with another `%`:
 
     $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%%%name%%%'
     %Thermo-Alchemist%
+
+## suppressing non-essential messages
+
+The `-q` option suppresses some non-essential messages such as "there are
+multiple printings of this card" warnings.
 
 ## deck browser
 

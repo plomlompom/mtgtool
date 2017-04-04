@@ -52,10 +52,18 @@ def parse_args():
                         help='card deck file to browse in curses interface')
     parser.add_argument('-f', dest='template', action='store',
                         help='card data formatting template')
+    parser.add_argument('-q', dest='quiet', action='store_true',
+                        help='suppress non-essential messages')
     parser.add_argument('--test-parser',
                         dest='deck_file_name_debug', action='store',
                         help='run deck file through parser for debugging')
     return parser, parser.parse_args()
+
+
+def print_verbose(msg):
+    global args
+    if not args.quiet:
+        print(msg)
 
 
 def get_db_paths():
@@ -70,19 +78,19 @@ def get_db_paths():
 def init_db(db_dir, sql_file):
 
     def get_mtg_dict(db_dir):
-        print('Retrieving JSON of all MTG card sets …')
+        print_verbose('Retrieving JSON of all MTG card sets …')
         import urllib.request
         json_file_path = db_dir + 'AllSets-x.json'
         json_zipped_file_path = json_file_path + '.zip'
         urllib.request.urlretrieve(mtgjson_url, json_zipped_file_path)
-        print('Unzipping JSON …')
+        print_verbose('Unzipping JSON …')
         import zipfile
         zip_ref = zipfile.ZipFile(json_zipped_file_path, 'r')
         zip_ref.extract('AllSets-x.json', db_dir)
         zip_ref.close()
         mtgjson_file = open(json_file_path, 'r')
         import json
-        print('Creating sqlite DB …')
+        print_verbose('Creating sqlite DB …')
         mtgjson_dict = json.load(mtgjson_file)
         mtgjson_file.close()
         import os
@@ -232,7 +240,8 @@ def init_db(db_dir, sql_file):
     import sqlite3
     import os.path
     if not (os.path.isfile(sql_file)):
-        print('No MTG card sets DB found, constructing it in ' + db_dir + ' …')
+        print_verbose('No MTG card sets DB found, constructing it in ' +
+                      db_dir + ' …')
         mtgjson_dict = get_mtg_dict(db_dir)
         conn = sqlite3.connect(sql_file)
         cursor = conn.cursor()
@@ -277,6 +286,7 @@ def get_translated_original_name(cursor, conn, translation):
 
 
 def get_card(cursor, conn, card_name, card_set=None):
+    global args
 
     def print_card(card_id):
 
@@ -385,15 +395,18 @@ def get_card(cursor, conn, card_name, card_set=None):
             if set_name_i in sets_of_card:
                 set_name = set_name_i
         card_choice = sets_of_card.index(set_name)
-        output += ['There are multiple printings of this card in different '
-                   'sets. Showing the printing of newest set: ' + set_name]
+        if not args.quiet:
+            output += ['There are multiple printings of this card in '
+                       'different sets. Showing the printing of newest set: '
+                       + set_name]
     selected_id = results[card_choice]['id']
     use_multinames = results[card_choice]['use_multinames']
     if 1 == use_multinames:
         names = [row[0] for row in
                  cursor.execute('SELECT name FROM card_multinames '
                                 'WHERE id=?', (selected_id,))]
-        output += ['Card is split:']
+        if not args.quiet:
+            output += ['Card is split:']
         for name in names:
             output += ['//']
             cursor.execute('SELECT id FROM cards '
