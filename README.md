@@ -114,7 +114,7 @@ item its own line, indented with two whitespaces):
 If no format is selected for such items, the default is separation by comma.
 
 The following card data keys are legal and accept the formatting suffixes
-`|comma` and `|indent``:
+`|comma` and `|indent`:
 
     names
     color
