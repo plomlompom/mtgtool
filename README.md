@@ -101,20 +101,20 @@ keywords in `%` symbols, to be replaced with the respective card data. Example:
 
 Some card data is iterable (cards may have more than one name, color, etc.;
 certain card texts consist of multiple lines). Here, the formatting can be
-further refined with a format name appended to data key after a `|` separator.
+further refined with a format name appended to a data key after a `|` separator.
 The available formats are `comma` (separate items by `, `) and `indent` (each
 item its own line, indented with two whitespaces):
 
     $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%subtypes|comma%'
     Human, Shaman
-
-If no format is selected for such items, the default is separation by comma.
-
     $ ./mtgtool.py -c 'Thermo-Alchemist' -f '%subtypes|indent%'
       Human
       Shaman
 
-The following card data keys are legal and accept such a formatting suffix:
+If no format is selected for such items, the default is separation by comma.
+
+The following card data keys are legal and accept the formatting suffixes
+`|comma` and `|indent``:
 
     names
     color
