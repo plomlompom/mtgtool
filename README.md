@@ -96,7 +96,7 @@ passed to the `-t` option:
 
 The card data output format in the examples above is not fixed. A template
 string can be provided with the `-f` option. The string may enclose certain
-keywords in `%` symbols, to be replaced with the respective card data. Example:
+keywords in `%` symbols, to be replaced with the respective card data:
 
     $ ./mtgtool.py -c 'Thermo-Alchemist' -f 'Card name: %name% (%mana_cost%)'
     Card name: Thermo-Alchemist ({1}{R})
@@ -119,6 +119,9 @@ The following card data keys are legal and accept the formatting suffixes
 `|comma` and `|indent`:
 
     names
+    flavor
+    oracle_text
+    printed_text
     color
     color_identity
     supertypes
@@ -141,9 +144,6 @@ The following card data keys are legal, but accept no formatting suffix:
     toughness
     max_hand_size_mod
     start_life_total_mod
-    flavor
-    oracle_text
-    printed_text
     rarity
 
 To put a literal `%` into a template string, escape it with another `%`:
