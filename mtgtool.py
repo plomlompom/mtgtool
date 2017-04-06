@@ -1,4 +1,7 @@
 #!/usr/bin/python3
+import os
+import os.path
+import sqlite3
 
 
 mtgjson_url = 'http://mtgjson.com/json/AllSets-x.json.zip'
@@ -66,107 +69,140 @@ def print_verbose(msg):
         print(msg)
 
 
-def get_db_paths():
-    import os
-    db_dir = os.getenv('HOME') + '/.mtgtool/'
-    import os.path
-    if not os.path.exists(db_dir):
-        os.makedirs(db_dir)
-    return db_dir, db_dir + 'db.sqlite'
+class DB:
 
+    def __init__(self):
+        self.db_dir = os.getenv('HOME') + '/.mtgtool/'
+        if not os.path.exists(self.db_dir):
+            os.makedirs(self.db_dir)
+        self.sql_file = self.db_dir + 'db.sqlite'
+        if not (os.path.isfile(self.sql_file)):
+            print_verbose('No MTG card sets DB found, constructing it in ' +
+                          self.db_dir + ' …')
+            self.create_db()
+        else:
+            self.conn = sqlite3.connect(self.sql_file)
+            self.cursor = self.conn.cursor()
 
-def init_db(db_dir, sql_file):
+    def insert(self, table, d):
+        keys = []
+        values = []
+        for key in d:
+            keys += [key]
+            values += [d[key]]
+        placeholders = ', '.join(len(keys) * ['?'])
+        keys = ', '.join(keys)
+        code = 'INSERT INTO %s (%s) VALUES (%s)' % (table, keys, placeholders)
+        self.cursor.execute(code, values)
 
-    def get_mtg_dict(db_dir):
-        print_verbose('Retrieving JSON of all MTG card sets …')
+    def create_db(self):
+        mtgjson_dict = self.get_mtg_dict()
+        self.conn = sqlite3.connect(self.sql_file)
+        self.cursor = self.conn.cursor()
+        self.create_tables()
+        cards = []
+        set_dates = {}
+        for set_name in mtgjson_dict:
+            set_dates[set_name] = mtgjson_dict[set_name]['releaseDate']
+            self.insert('sets',
+                        {'name': set_name,
+                         'date': mtgjson_dict[set_name]['releaseDate']})
+            split_cards = []
+            for card in mtgjson_dict[set_name]['cards']:
+                if card['layout'] == 'split':
+                    self.ensure_split_entry(split_cards, card, set_name)
+                self.add_card_entry(set_name, card)
+        self.conn.commit()
+
+    def get_mtg_dict(self):
         import urllib.request
-        json_file_path = db_dir + 'AllSets-x.json'
+        import zipfile
+        import json
+        print_verbose('Retrieving JSON of all MTG card sets …')
+        json_file_path = self.db_dir + 'AllSets-x.json'
         json_zipped_file_path = json_file_path + '.zip'
         urllib.request.urlretrieve(mtgjson_url, json_zipped_file_path)
         print_verbose('Unzipping JSON …')
-        import zipfile
         zip_ref = zipfile.ZipFile(json_zipped_file_path, 'r')
-        zip_ref.extract('AllSets-x.json', db_dir)
+        zip_ref.extract('AllSets-x.json', self.db_dir)
         zip_ref.close()
         mtgjson_file = open(json_file_path, 'r')
-        import json
         print_verbose('Creating sqlite DB …')
         mtgjson_dict = json.load(mtgjson_file)
         mtgjson_file.close()
-        import os
         os.remove(json_file_path)
         os.remove(json_zipped_file_path)
         return mtgjson_dict
 
-    def create_tables(cursor):
-        cursor.execute('CREATE TABLE sets ('
-                       'name PRIMARY KEY UNIQUE, '
-                       'date TEXT)')
-        cursor.execute('CREATE TABLE cards ('
-                       'id PRIMARY KEY UNIQUE, '
-                       'set_name, '
-                       'name, '
-                       'layout, '
-                       'mana_cost, '
-                       'oracle_type, '
-                       'original_type, '
-                       'rarity, '
-                       'oracle_text, '
-                       'original_text, '
-                       'flavor, '
-                       'power, '
-                       'toughness TEXT, '
-                       'use_multinames, '
-                       'cmc, '
-                       'loyalty, '
-                       'hand, '
-                       'life INTEGER, '
-                       'FOREIGN KEY (set_name) REFERENCES sets(name))')
-        cursor.execute('CREATE TABLE card_multinames ('
-                       'id, '
-                       'name TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_sets ('
-                       'id, '
-                       'set_name TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_colors ('
-                       'id, '
-                       'color TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_color_identities ('
-                       'id, '
-                       'color_identity TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_supertypes ('
-                       'id, '
-                       'supertype TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_types ('
-                       'id, '
-                       'type TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_subtypes ('
-                       'id, '
-                       'subtype TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_rulings ('
-                       'id, '
-                       'date, '
-                       'text TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_foreign_names ('
-                       'id, '
-                       'language, '
-                       'name TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
-        cursor.execute('CREATE TABLE card_legalities ('
-                       'id, '
-                       'format, '
-                       'legality TEXT, '
-                       'FOREIGN KEY(id) REFERENCES cards(id))')
+    def create_tables(self):
+        self.cursor.execute('CREATE TABLE sets ('
+                            'name PRIMARY KEY UNIQUE, '
+                            'date TEXT)')
+        self.cursor.execute('CREATE TABLE cards ('
+                            'id PRIMARY KEY UNIQUE, '
+                            'set_name, '
+                            'name, '
+                            'layout, '
+                            'mana_cost, '
+                            'oracle_type, '
+                            'original_type, '
+                            'rarity, '
+                            'oracle_text, '
+                            'original_text, '
+                            'flavor, '
+                            'power, '
+                            'toughness TEXT, '
+                            'use_multinames, '
+                            'cmc, '
+                            'loyalty, '
+                            'hand, '
+                            'life INTEGER, '
+                            'FOREIGN KEY (set_name) REFERENCES sets(name))')
+        self.cursor.execute('CREATE TABLE card_multinames ('
+                            'id, '
+                            'name TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_sets ('
+                            'id, '
+                            'set_name TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_colors ('
+                            'id, '
+                            'color TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_color_identities ('
+                            'id, '
+                            'color_identity TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_supertypes ('
+                            'id, '
+                            'supertype TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_types ('
+                            'id, '
+                            'type TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_subtypes ('
+                            'id, '
+                            'subtype TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_rulings ('
+                            'id, '
+                            'date, '
+                            'text TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_foreign_names ('
+                            'id, '
+                            'language, '
+                            'name TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
+        self.cursor.execute('CREATE TABLE card_legalities ('
+                            'id, '
+                            'format, '
+                            'legality TEXT, '
+                            'FOREIGN KEY(id) REFERENCES cards(id))')
 
-    def ensure_split_entry(cursor, split_cards, card, set_name):
+    def ensure_split_entry(self, split_cards, card, set_name):
         import hashlib
         split_name = card['names'][0] + ' // ' + card['names'][1]
         if split_name not in split_cards:
@@ -177,40 +213,36 @@ def init_db(db_dir, sql_file):
             to_hash = set_name + split_name + card['imageName']
             h.update(to_hash.encode())
             hex_hash = h.hexdigest()
-            cursor.execute('INSERT INTO cards '
-                           '(id, name, set_name, use_multinames) '
-                           'VALUES (?, ?, ?, ?)',
-                           (hex_hash, split_name, set_name, 1))
-            cursor.execute('INSERT INTO card_multinames (id, name) '
-                           'VALUES (?, ?)', (hex_hash, card['names'][0]))
-            cursor.execute('INSERT INTO card_multinames (id, name) '
-                           'VALUES (?, ?)', (hex_hash, card['names'][1]))
+            self.insert('cards', {'id': hex_hash, 'name': split_name,
+                                  'set_name': set_name, 'use_multinames': 1})
+            self.insert('card_multinames', {'id': hex_hash,
+                                            'name': card['names'][0]})
+            self.insert('card_multinames', {'id': hex_hash,
+                                            'name': card['names'][1]})
 
-    def add_card_entry(card):
+    def add_card_entry(self, set_name, card):
 
-        def insert_into_array_table(table_name, col_name, key):
+        def insert_into_array_table(table, col, key):
             if key in card:
                 for element in card[key]:
-                    cursor.execute('INSERT INTO ' + table_name+' (id, ' +
-                                   col_name + ') VALUES (?,?)',
-                                   (card['id'], element))
+                    self.insert(table, {'id': card['id'], col: element})
 
         for key in ('manaCost', 'text', 'flavor', 'power', 'toughness', 'cmc',
                     'loyalty', 'hand', 'life', 'originalType', 'originalText'):
             if key not in card:
                 card[key] = None
-        cursor.execute('INSERT INTO cards ('
-                       'id, set_name, name, layout, mana_cost, oracle_type, '
-                       'original_type, rarity, oracle_text, original_text, '
-                       'flavor, power, toughness, cmc, loyalty, hand, life, '
-                       'use_multinames) '
-                       'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
-                       (card['id'], set_name, card['name'], card['layout'],
-                        card['manaCost'], card['type'], card['originalType'],
-                        card['rarity'], card['text'], card['originalText'],
-                        card['flavor'], card['power'], card['toughness'],
-                        card['cmc'], card['loyalty'], card['hand'],
-                        card['life'], 0))
+        self.insert('cards',
+                    {'id': card['id'], 'set_name': set_name,
+                     'name': card['name'], 'layout': card['layout'],
+                     'mana_cost': card['manaCost'],
+                     'oracle_type': card['type'],
+                     'original_type': card['originalType'],
+                     'rarity': card['rarity'], 'oracle_text': card['text'],
+                     'original_text': card['originalText'],
+                     'flavor': card['flavor'], 'power': card['power'],
+                     'toughness': card['toughness'], 'cmc': card['cmc'],
+                     'loyalty': card['loyalty'], 'hand': card['hand'],
+                     'life': card['life'], 'use_multinames': 0})
         insert_into_array_table('card_multinames', 'name', 'names')
         insert_into_array_table('card_sets', 'set_name', 'printings')
         insert_into_array_table('card_colors', 'color', 'colors')
@@ -221,51 +253,24 @@ def init_db(db_dir, sql_file):
         insert_into_array_table('card_subtypes', 'subtype', 'subtypes')
         if 'rulings' in card:
             for ruling in card['rulings']:
-                cursor.execute('INSERT INTO card_rulings (id, date, text) '
-                               'VALUES (?,?,?)',
-                               (card['id'], ruling['date'], ruling['text']))
+                self.insert('card_rulings',
+                            {'id': card['id'], 'date': ruling['date'],
+                             'text': ruling['text']})
         if 'foreignNames' in card:
             for foreign_name in card['foreignNames']:
-                cursor.execute('INSERT INTO card_foreign_names '
-                               '(id, language, name) VALUES (?,?,?)',
-                               (card['id'], foreign_name['language'],
-                                foreign_name['name']))
+                self.insert('card_foreign_names',
+                            {'id': card['id'],
+                             'language': foreign_name['language'],
+                             'name': foreign_name['name']})
         if 'legalities' in card:
             for legality in card['legalities']:
-                cursor.execute('INSERT INTO card_legalities '
-                               '(id, format, legality) VALUES (?,?,?)',
-                               (card['id'], legality['format'],
-                                legality['legality']))
-
-    import sqlite3
-    import os.path
-    if not (os.path.isfile(sql_file)):
-        print_verbose('No MTG card sets DB found, constructing it in ' +
-                      db_dir + ' …')
-        mtgjson_dict = get_mtg_dict(db_dir)
-        conn = sqlite3.connect(sql_file)
-        cursor = conn.cursor()
-        create_tables(cursor)
-        cards = []
-        set_dates = {}
-        for set_name in mtgjson_dict:
-            set_dates[set_name] = mtgjson_dict[set_name]['releaseDate']
-            cursor.execute('INSERT INTO sets (name, date) VALUES (?, ?)',
-                           (set_name, mtgjson_dict[set_name]['releaseDate']))
-            split_cards = []
-            for card in mtgjson_dict[set_name]['cards']:
-                if card['layout'] == 'split':
-                    ensure_split_entry(cursor, split_cards, card, set_name)
-                add_card_entry(card)
-        conn.commit()
-    else:
-        conn = sqlite3.connect(sql_file)
-        cursor = conn.cursor()
-    return cursor, conn
+                self.insert('card_legalities',
+                            {'id': card['id'], 'format': legality['format'],
+                             'legality': legality['legality']})
 
 
-def get_translated_original_name(cursor, conn, translation):
-    results = [(row[0], row[1]) for row in cursor.execute(
+def get_translated_original_name(db, translation):
+    results = [(row[0], row[1]) for row in db.cursor.execute(
                'SELECT id, language FROM card_foreign_names WHERE name = ?',
                (translation,))]
     if len(results) == 0:
@@ -275,9 +280,9 @@ def get_translated_original_name(cursor, conn, translation):
         for result in results:
             selected_id = result[0]
             language = result[1]
-            cursor.execute('SELECT name FROM cards WHERE id = ?',
-                           (selected_id,))
-            name = cursor.fetchone()[0]
+            db.cursor.execute('SELECT name FROM cards WHERE id = ?',
+                              (selected_id,))
+            name = db.cursor.fetchone()[0]
             name_language_combo = language + ':' + name
             if name_language_combo not in used_name_language_combos:
                 print('\'' + translation + '\' is the', language,
@@ -285,14 +290,16 @@ def get_translated_original_name(cursor, conn, translation):
                 used_name_language_combos += [name_language_combo]
 
 
-def get_card(cursor, conn, card_name, card_set=None):
+def get_card(cursor, card_name, card_set=None):
     global args
 
     def print_card(card_id):
 
         def multiline_text(text):
+            # TODO: Instead, check None below in the val resolution, as other
+            # fields may also be affected.
             if text is not None:
-                return text.split('\n') #return '  ' + text.replace('\n', '\n  ')
+                return text.split('\n')
             return []
 
         def get_list(table, keys):
@@ -367,9 +374,9 @@ def get_card(cursor, conn, card_name, card_set=None):
                 val = d[var_name]
                 if type(val) is list:
                     val = join_by_sep_rule(sep_filter, val)
-            card_desc_start = card_desc[:i_start] + val 
+            card_desc_start = card_desc[:i_start] + val
             card_desc = card_desc_start + card_desc[i_end+1:]
-            i_end = len(card_desc_start) - 1 
+            i_end = len(card_desc_start) - 1
         output += card_desc.split('\n')
 
     sorted_sets = [row[0] for row in
@@ -397,8 +404,8 @@ def get_card(cursor, conn, card_name, card_set=None):
         card_choice = sets_of_card.index(set_name)
         if not args.quiet:
             output += ['There are multiple printings of this card in '
-                       'different sets. Showing the printing of newest set: '
-                       + set_name]
+                       'different sets. Showing the printing of newest set: ' +
+                       set_name]
     selected_id = results[card_choice]['id']
     use_multinames = results[card_choice]['use_multinames']
     if 1 == use_multinames:
@@ -418,7 +425,7 @@ def get_card(cursor, conn, card_name, card_set=None):
     return output
 
 
-def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
+def browse_cards(stdscr, db, entry_list, has_sideboard):
 
     class Pane:
 
@@ -506,7 +513,8 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
 
     class CardDescription(Pane):
 
-        def __init__(self, start_x, win_width, win_height, card_names):
+        def __init__(self, db, start_x, win_width, win_height, card_names):
+            import threading
             super().__init__()
             self._start_x = start_x
             self._pad_height = 1
@@ -514,31 +522,30 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
             self._descriptions = {}
             self._pad = curses.newpad(self._pad_height, self._win_width)
             self._card_names = card_names
-            import threading
 
             class CardCollector(threading.Thread):
 
-                def __init__(self, card_names, card_descriptions):
+                def __init__(self, db, card_names, card_descriptions):
+                    self._db = db
                     self._names = card_names
                     self._descs = card_descriptions
                     self._stopper = threading.Event()
                     super().__init__(group=None)
 
                 def run(self):
-                    import sqlite3
-                    conn = sqlite3.connect(sql_file)
+                    conn = sqlite3.connect(self._db.sql_file)
                     cursor = conn.cursor()
                     for name in self._names:
                         if self._stopper.isSet():
                             break
                         if name not in self._descs:
-                            self._descs[name] = get_card(cursor, conn, name)
+                            self._descs[name] = get_card(cursor, name)
                     conn.close()
 
                 def kill(self):
                     self._stopper.set()
 
-            self._card_collector = CardCollector(self._card_names,
+            self._card_collector = CardCollector(db, self._card_names,
                                                  self._descriptions)
             self._card_collector.start()
 
@@ -568,13 +575,13 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
             self._card_collector.kill()
 
         def _draw_content(self):
+            import unicodedata
             if self._card_name not in self._descriptions:
-                self._descriptions[self._card_name] = get_card(cursor, conn,
+                self._descriptions[self._card_name] = get_card(db.cursor,
                                                                self._card_name)
             card_desc_lines = self._descriptions[self._card_name]
             height = 0
             fixed_lines = []
-            import unicodedata
             for i in range(len(card_desc_lines)):
                 line = card_desc_lines[i]
                 padding = 0
@@ -595,7 +602,7 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
 
     class Window:
 
-        def __init__(self, x_separator, entry_list, has_sideboard):
+        def __init__(self, db, x_separator, entry_list, has_sideboard):
             curses.curs_set(False)
             self._set_geometry()
             self._x_separator = x_separator
@@ -604,7 +611,7 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
             self._card_list = CardList(entry_list, self._x_separator,
                                        self._height, has_sideboard)
             card_names = [entry.name for entry in entry_list]
-            self._card_desc = CardDescription(self._x_separator + 1,
+            self._card_desc = CardDescription(db, self._x_separator + 1,
                                               self._width, self._height,
                                               card_names)
             self._draw_frames()
@@ -671,7 +678,7 @@ def browse_cards(stdscr, cursor, conn, entry_list, has_sideboard):
             self._card_desc.stop_card_collector()
 
     card_list_width = 30
-    window = Window(card_list_width, entry_list, has_sideboard)
+    window = Window(db, card_list_width, entry_list, has_sideboard)
     key = ''
     while key != 'q':
         window.draw_frame_insides()
@@ -704,7 +711,6 @@ class DeckEntry():
 
 def parse_deck_file(path):
     import re
-    import os.path
 
     def check_lines_by_regex(deck_lines, regex_correctness):
         for i in range(len(deck_lines)):
@@ -819,7 +825,7 @@ def template_is_good(templ):
         'oracle_text': 1,
         'printed_text': 1,
         'rarity': 0,
-        'color': 1, 
+        'color': 1,
         'color_identity': 1,
         'supertypes': 1,
         'types': 1,
@@ -856,12 +862,11 @@ def template_is_good(templ):
             error('Filter ' + sep_filter + ' illegal for ' + var_name + '.')
 
 
-db_dir, sql_file = get_db_paths()
 argparser, args = parse_args()
 if args.template:
     template = args.template
 template_is_good(template)
-cursor, conn = init_db(db_dir, sql_file)
+db = DB()
 if args.deck_file_name_debug:
     entry_list, _ = parse_deck_file(args.deck_file_name_debug)
     if entry_list:
@@ -873,13 +878,13 @@ elif args.deck_file_name:
         import curses
         import sys
         sys.stderr = open('error_log', 'w')
-        curses.wrapper(browse_cards, cursor, conn, entry_list, has_sideboard)
+        curses.wrapper(browse_cards, db, entry_list, has_sideboard)
 elif args.card_translation:
-    get_translated_original_name(cursor, conn, args.card_translation)
+    get_translated_original_name(db, args.card_translation)
 elif args.card_name:
     [print(line) for line
-     in get_card(cursor, conn, args.card_name, args.card_set)]
+     in get_card(db.cursor, args.card_name, args.card_set)]
 else:
     argparser.print_help()
-conn.close()
+db.conn.close()
 exit()
