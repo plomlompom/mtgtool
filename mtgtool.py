@@ -269,7 +269,7 @@ class DB:
                              'legality': legality['legality']})
 
 
-def get_translated_original_name(db, translation):
+def get_translated_original_name(cursor, translation):
     results = [(row[0], row[1]) for row in db.cursor.execute(
                'SELECT id, language FROM card_foreign_names WHERE name = ?',
                (translation,))]
@@ -280,9 +280,9 @@ def get_translated_original_name(db, translation):
         for result in results:
             selected_id = result[0]
             language = result[1]
-            db.cursor.execute('SELECT name FROM cards WHERE id = ?',
-                              (selected_id,))
-            name = db.cursor.fetchone()[0]
+            cursor.execute('SELECT name FROM cards WHERE id = ?',
+                           (selected_id,))
+            name = cursor.fetchone()[0]
             name_language_combo = language + ':' + name
             if name_language_combo not in used_name_language_combos:
                 print('\'' + translation + '\' is the', language,
@@ -862,29 +862,32 @@ def template_is_good(templ):
             error('Filter ' + sep_filter + ' illegal for ' + var_name + '.')
 
 
+# Parse input.
 argparser, args = parse_args()
 if args.template:
     template = args.template
 template_is_good(template)
-db = DB()
+
+# Execute user command.
 if args.deck_file_name_debug:
     entry_list, _ = parse_deck_file(args.deck_file_name_debug)
     if entry_list:
         for entry in entry_list:
             print(entry.is_sideboard, entry.count, entry.name)
-elif args.deck_file_name:
-    entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
-    if entry_list:
-        import curses
-        import sys
-        sys.stderr = open('error_log', 'w')
-        curses.wrapper(browse_cards, db, entry_list, has_sideboard)
-elif args.card_translation:
-    get_translated_original_name(db, args.card_translation)
-elif args.card_name:
-    [print(line) for line
-     in get_card(db.cursor, args.card_name, args.card_set)]
 else:
-    argparser.print_help()
-db.conn.close()
-exit()
+    db = DB()
+    if args.deck_file_name:
+        entry_list, has_sideboard = parse_deck_file(args.deck_file_name)
+        if entry_list:
+            import curses
+            import sys
+            sys.stderr = open('error_log', 'w')
+            curses.wrapper(browse_cards, db, entry_list, has_sideboard)
+    elif args.card_translation:
+        get_translated_original_name(db.cursor, args.card_translation)
+    elif args.card_name:
+        [print(line) for line
+         in get_card(db.cursor, args.card_name, args.card_set)]
+    else:
+        argparser.print_help()
+    db.conn.close()
