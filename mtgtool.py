@@ -427,6 +427,51 @@ def get_card(cursor, card_name, card_set=None):
 
 def browse_cards(stdscr, db, entry_list, has_sideboard):
 
+    class CardCollection:
+
+        def __init__(self, db, entry_list, has_sideboard):
+            import threading
+
+            class CardCollector(threading.Thread):
+
+                def __init__(self, db, entry_list, card_descriptions):
+                    self._db = db
+                    self._names = [entry.name for entry in entry_list]
+                    self._descs = card_descriptions
+                    self._stopper = threading.Event()
+                    super().__init__(group=None)
+
+                def run(self):
+                    conn = sqlite3.connect(self._db.sql_file)
+                    cursor = conn.cursor()
+                    for name in self._names:
+                        if self._stopper.isSet():
+                            break
+                        if name not in self._descs:
+                            self._descs[name] = get_card(cursor, name)
+                    conn.close()
+
+                def kill(self):
+                    self._stopper.set()
+
+            self.db = db
+            self.have_sideboard = has_sideboard
+            entry_list.sort(key=lambda card: card.name)
+            entry_list.sort(key=lambda card: card.is_sideboard)
+            self.entry_list = entry_list
+            self.descriptions = {}
+            self._card_collector = CardCollector(self.db, self.entry_list,
+                                                 self.descriptions)
+            self._card_collector.start()
+
+        def get_card_desc(self, name):
+            if name not in self.descriptions:
+                self.descriptions[name] = get_card(self.db.cursor, name)
+            return self.descriptions[name]
+
+        def stop_card_collector(self):
+            self._card_collector.kill()
+
     class Pane:
 
         def __init__(self):
@@ -447,9 +492,9 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
                                   self._win_height - 1,
                                   self._start_x + self._win_width - 1)
 
-    class CardList(Pane):
+    class CardListFrame(Pane):
 
-        def __init__(self, entry_list, win_width, win_height, has_sideboard):
+        def __init__(self, win_width, win_height, entry_list, has_sideboard):
             super().__init__()
             self._has_sideboard = has_sideboard
             self._entry_list = entry_list
@@ -511,48 +556,19 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
                     line = line[0:self._win_width - 1] + '…'
                 self._pad.addstr(i, 0, line, attr)
 
-    class CardDescription(Pane):
+    class CardDescFrame(Pane):
 
-        def __init__(self, db, start_x, win_width, win_height, card_names):
-            import threading
+        def __init__(self, start_x, win_width, win_height):
             super().__init__()
             self._start_x = start_x
             self._pad_height = 1
             self.set_geometry(win_height, win_width)
-            self._descriptions = {}
             self._pad = curses.newpad(self._pad_height, self._win_width)
-            self._card_names = card_names
-
-            class CardCollector(threading.Thread):
-
-                def __init__(self, db, card_names, card_descriptions):
-                    self._db = db
-                    self._names = card_names
-                    self._descs = card_descriptions
-                    self._stopper = threading.Event()
-                    super().__init__(group=None)
-
-                def run(self):
-                    conn = sqlite3.connect(self._db.sql_file)
-                    cursor = conn.cursor()
-                    for name in self._names:
-                        if self._stopper.isSet():
-                            break
-                        if name not in self._descs:
-                            self._descs[name] = get_card(cursor, name)
-                    conn.close()
-
-                def kill(self):
-                    self._stopper.set()
-
-            self._card_collector = CardCollector(db, self._card_names,
-                                                 self._descriptions)
-            self._card_collector.start()
 
         def set_geometry(self, win_height, win_width):
             self._win_height = win_height - 1
             self._win_width = win_width - self._start_x
-            if hasattr(self, '_card_name'):
+            if hasattr(self, '_card_desc'):
                 self._draw_content()
             if self.scroll_offset != 0:
                 if self._win_height >= self._pad_height:
@@ -560,8 +576,8 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
                 elif self.scroll_offset > self._pad_height - self._win_height:
                     self.scroll_offset = self._pad_height - self._win_height
 
-        def set_card(self, card_name):
-            self._card_name = card_name
+        def set_desc(self, card_desc):
+            self._card_desc = card_desc
 
         def scroll_up(self):
             if self.scroll_offset > 0:
@@ -576,10 +592,7 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
 
         def _draw_content(self):
             import unicodedata
-            if self._card_name not in self._descriptions:
-                self._descriptions[self._card_name] = get_card(db.cursor,
-                                                               self._card_name)
-            card_desc_lines = self._descriptions[self._card_name]
+            card_desc_lines = self._card_desc[:]
             height = 0
             fixed_lines = []
             for i in range(len(card_desc_lines)):
@@ -602,18 +615,16 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
 
     class Window:
 
-        def __init__(self, db, x_separator, entry_list, has_sideboard):
+        def __init__(self, x_separator, card_coll):
+            self._card_coll = card_coll
             curses.curs_set(False)
             self._set_geometry()
             self._x_separator = x_separator
-            entry_list.sort(key=lambda card: card.name)
-            entry_list.sort(key=lambda card: card.is_sideboard)
-            self._card_list = CardList(entry_list, self._x_separator,
-                                       self._height, has_sideboard)
-            card_names = [entry.name for entry in entry_list]
-            self._card_desc = CardDescription(db, self._x_separator + 1,
-                                              self._width, self._height,
-                                              card_names)
+            self._card_list = CardListFrame(self._x_separator, self._height,
+                                            self._card_coll.entry_list,
+                                            self._card_coll.have_sideboard)
+            self._card_desc = CardDescFrame(self._x_separator + 1,
+                                            self._width, self._height)
             self._draw_frames()
 
         def _set_geometry(self):
@@ -656,7 +667,9 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
 
         def draw_frame_insides(self):
             self._card_list.draw()
-            self._card_desc.set_card(self._card_list.selected_card)
+            card_name = self._card_list.selected_card
+            card_desc = self._card_coll.get_card_desc(card_name)
+            self._card_desc.set_desc(card_desc)
             self._card_desc.draw()
             curses.doupdate()
 
@@ -675,10 +688,11 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
             self._card_desc.scroll_down()
 
         def quit(self):
-            self._card_desc.stop_card_collector()
+            self._card_coll.stop_card_collector()
 
     card_list_width = 30
-    window = Window(db, card_list_width, entry_list, has_sideboard)
+    card_coll = CardCollection(db, entry_list, has_sideboard)
+    window = Window(card_list_width, card_coll)
     key = ''
     while key != 'q':
         window.draw_frame_insides()
