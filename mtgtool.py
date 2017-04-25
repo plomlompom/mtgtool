@@ -449,9 +449,6 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
                             self._descs[name] = get_card(cursor, name)
                     conn.close()
 
-                def kill(self):
-                    self._stopper.set()
-
             self.db = db
             self.have_sideboard = has_sideboard
             entry_list.sort(key=lambda card: card.name)
