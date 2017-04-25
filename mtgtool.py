@@ -432,22 +432,13 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
         def __init__(self, db, entry_list, has_sideboard):
             import threading
 
-            class CardCollector(threading.Thread):
-
-                def __init__(self, db, entry_list, card_descriptions,
-                             *args, **kwargs):
-                    super().__init__(*args, **kwargs)
-                    self._db = db
-                    self._names = [entry.name for entry in entry_list]
-                    self._descs = card_descriptions
-
-                def run(self):
-                    conn = sqlite3.connect(self._db.sql_file)
-                    cursor = conn.cursor()
-                    for name in self._names:
-                        if name not in self._descs:
-                            self._descs[name] = get_card(cursor, name)
-                    conn.close()
+            def collect_cards(db, names, descs):
+                conn = sqlite3.connect(db.sql_file)
+                cursor = conn.cursor()
+                for name in names:
+                    if name not in descs:
+                        descs[name] = get_card(cursor, name)
+                conn.close()
 
             self.db = db
             self.have_sideboard = has_sideboard
@@ -455,10 +446,11 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
             entry_list.sort(key=lambda card: card.is_sideboard)
             self.entry_list = entry_list
             self.descriptions = {}
-            self._card_collector = CardCollector(self.db, self.entry_list,
-                                                 self.descriptions,
-                                                 daemon=True)
-            self._card_collector.start()
+            names = [entry.name for entry in self.entry_list]
+            t = threading.Thread(target=collect_cards, daemon=True,
+                                 kwargs={'db': self.db, 'names': names,
+                                         'descs': self.descriptions})
+            t.start()
 
         def get_card_desc(self, name):
             if name not in self.descriptions:
