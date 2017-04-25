@@ -434,19 +434,17 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
 
             class CardCollector(threading.Thread):
 
-                def __init__(self, db, entry_list, card_descriptions):
+                def __init__(self, db, entry_list, card_descriptions,
+                             *args, **kwargs):
+                    super().__init__(*args, **kwargs)
                     self._db = db
                     self._names = [entry.name for entry in entry_list]
                     self._descs = card_descriptions
-                    self._stopper = threading.Event()
-                    super().__init__(group=None)
 
                 def run(self):
                     conn = sqlite3.connect(self._db.sql_file)
                     cursor = conn.cursor()
                     for name in self._names:
-                        if self._stopper.isSet():
-                            break
                         if name not in self._descs:
                             self._descs[name] = get_card(cursor, name)
                     conn.close()
@@ -461,16 +459,14 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
             self.entry_list = entry_list
             self.descriptions = {}
             self._card_collector = CardCollector(self.db, self.entry_list,
-                                                 self.descriptions)
+                                                 self.descriptions,
+                                                 daemon=True)
             self._card_collector.start()
 
         def get_card_desc(self, name):
             if name not in self.descriptions:
                 self.descriptions[name] = get_card(self.db.cursor, name)
             return self.descriptions[name]
-
-        def stop_card_collector(self):
-            self._card_collector.kill()
 
     class Pane:
 
@@ -587,9 +583,6 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
             if self.scroll_offset < self._pad_height - self._win_height:
                 self.scroll_offset += 1
 
-        def stop_card_collector(self):
-            self._card_collector.kill()
-
         def _draw_content(self):
             import unicodedata
             card_desc_lines = self._card_desc[:]
@@ -687,9 +680,6 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
         def scroll_desc_down(self):
             self._card_desc.scroll_down()
 
-        def quit(self):
-            self._card_coll.stop_card_collector()
-
     card_list_width = 30
     card_coll = CardCollection(db, entry_list, has_sideboard)
     window = Window(card_list_width, card_coll)
@@ -712,7 +702,6 @@ def browse_cards(stdscr, db, entry_list, has_sideboard):
                 window.scroll_desc_up()
             elif 'j' == key:
                 window.scroll_desc_down()
-    window.quit()
 
 
 class DeckEntry():
